@@ -33,7 +33,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
-import sudoku.MainFrame;
+// import sudoku.MainFrame;
 
 public class UIQuickBrowse extends JFrame {
 
