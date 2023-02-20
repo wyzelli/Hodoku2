@@ -39,7 +39,7 @@ package sudoku;
  *
  * @author hobiwan
  */
-public class SudokuSet extends SudokuSetBase implements Cloneable {
+public class SudokuSet extends SudokuSetBase {
 	// für jede der 256 möglichen Kombinationen von Bits das entsprechende Array
 	private static int[][] possibleValues = new int[256][8];
 	// und zu jeder Zahl die Länge des Arrays

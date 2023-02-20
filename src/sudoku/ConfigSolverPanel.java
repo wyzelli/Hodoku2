@@ -476,7 +476,7 @@ public class ConfigSolverPanel extends javax.swing.JPanel implements ListDragAnd
 	public void buildTree() {
 		CheckNode root = new CheckNode();
 		for (int i = 0; i < steps.length; i++) {
-			@SuppressWarnings("unchecked")
+			// @SuppressWarnings("unchecked")
 			Enumeration<TreeNode> en = root.children();
 			CheckNode act = null;
 			while (en.hasMoreElements()) {

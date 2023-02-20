@@ -697,7 +697,7 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 			if (steps[i].getType() == SolutionType.BRUTE_FORCE) {
 				continue;
 			}
-			@SuppressWarnings("unchecked")
+			// @SuppressWarnings("unchecked")
 			Enumeration<TreeNode> en = root.children();
 
 			CheckNode act = null;

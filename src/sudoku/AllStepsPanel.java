@@ -234,7 +234,7 @@ public final class AllStepsPanel extends javax.swing.JPanel implements TreeSelec
 		if (last != null) {
 			if (last.getUserObject() instanceof String) {
 				// Erstes Step-Kind holen
-				@SuppressWarnings("unchecked")
+				// @SuppressWarnings("unchecked")
                                 Enumeration<TreeNode> children = last.children();
 				while (children.hasMoreElements()) {
 					DefaultMutableTreeNode act = (DefaultMutableTreeNode)children.nextElement();
@@ -867,7 +867,7 @@ public final class AllStepsPanel extends javax.swing.JPanel implements TreeSelec
 	 */
 	private int getTopLevelIndex(DefaultMutableTreeNode root, SolutionStep step) {
 		int index = 0;
-		@SuppressWarnings("unchecked")
+		// @SuppressWarnings("unchecked")
 		Enumeration<TreeNode> nodes = root.children();
 		while (nodes.hasMoreElements()) {
 			DefaultMutableTreeNode nextNode = (DefaultMutableTreeNode)nodes.nextElement();
@@ -885,7 +885,7 @@ public final class AllStepsPanel extends javax.swing.JPanel implements TreeSelec
 			return (SolutionStep) node.getUserObject();
 		} else if (node.getUserObject() instanceof String) {
 			// erstes Kind suchen, das ein SolutionStep ist
-			@SuppressWarnings("unchecked")
+			// @SuppressWarnings("unchecked")
 			Enumeration<TreeNode> nodes = node.children();
 			while (nodes.hasMoreElements()) {
 				DefaultMutableTreeNode nextNode = (DefaultMutableTreeNode)nodes.nextElement();
@@ -903,7 +903,7 @@ public final class AllStepsPanel extends javax.swing.JPanel implements TreeSelec
 		if (last != null) {
 			if (last.getUserObject() instanceof String) {
 				// Erstes Step-Kind anzeigen
-				@SuppressWarnings("unchecked")
+				// @SuppressWarnings("unchecked")
 				Enumeration<TreeNode> children = last.children();
 				while (children.hasMoreElements()) {
 					DefaultMutableTreeNode act = (DefaultMutableTreeNode)children.nextElement();

@@ -611,7 +611,7 @@ public class ConfigProgressPanel extends javax.swing.JPanel implements ListDragA
 				// only steps with difficulty EASY - UNFAIR are allowed
 				continue;
 			}
-			@SuppressWarnings("unchecked")
+			// @SuppressWarnings("unchecked")
 			Enumeration<TreeNode> en = root.children();
                         
 			CheckNode act = null;

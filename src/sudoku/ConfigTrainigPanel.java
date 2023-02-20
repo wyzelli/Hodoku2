@@ -302,7 +302,7 @@ public class ConfigTrainigPanel extends javax.swing.JPanel {
 				// find a suitable puzzle)
 				continue;
 			}
-			@SuppressWarnings("unchecked")
+			// @SuppressWarnings("unchecked")
 			Enumeration<TreeNode> en = root.children();
 			CheckNode act = null;
 			while (en.hasMoreElements()) {
