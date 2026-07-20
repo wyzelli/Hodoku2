@@ -312,6 +312,7 @@ public class CellZoomPanel extends JPanel implements ActionListener {
 			toggleCandidatesButtons[candidate - 1].setForeground(normButtonForeground);
 			toggleCandidatesButtons[candidate - 1].setBackground(normButtonBackground);
 			toggleCandidatesButtons[candidate - 1].setIcon(null);
+			mainFrame.fixFocus();
 		}
 	}
 
