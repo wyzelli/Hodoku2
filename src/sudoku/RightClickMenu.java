@@ -651,6 +651,7 @@ public class RightClickMenu extends JPopupMenu implements ActionListener {
 			mainFrame.check();
 			repaint();
 		}
+		mainFrame.fixFocus();
 	}
 	
 	public void deleteValuePopup(int row, int col, int cellSize) {
