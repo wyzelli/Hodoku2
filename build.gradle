@@ -1,0 +1,68 @@
+plugins {
+    id 'application'
+    id 'org.beryx.runtime' version '2.0.1'
+}
+
+group = 'net.sourceforge.hodoku'
+version = '2.2'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+// The codebase predates the Maven/Gradle standard layout (src/main/java).
+// Rather than moving every file, point Gradle straight at the existing
+// flat `src` tree: every *.java file is a source file, everything else
+// (img/, intl/, help/, templates.dat) is a runtime resource that needs
+// to land on the classpath in the same relative location.
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+        resources {
+            srcDirs = ['src']
+            exclude '**/*.java'
+        }
+    }
+}
+
+application {
+    mainClass = 'sudoku.Main'
+}
+
+// Keep the familiar dist/HoDoKu.jar name and location instead of Gradle's
+// default build/libs/Hodoku2.jar, so existing docs/shortcuts still work.
+jar {
+    archiveBaseName = 'HoDoKu'
+    archiveVersion = ''
+    destinationDirectory = file('dist')
+    manifest {
+        attributes 'Main-Class': 'sudoku.Main'
+    }
+}
+
+// org.beryx.runtime wires up jlink (custom minimal JRE) + jpackage
+// (native installers/executables) - this replaces launch4j. jpackage
+// must be run on the target OS: run this on Windows to get an .exe/.msi,
+// on Linux for a .deb/.rpm/app-image, on macOS for a .dmg/.pkg.
+runtime {
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    modules = ['java.desktop', 'java.logging', 'java.prefs']
+
+    jpackage {
+        imageName = 'Hodoku'
+        installerName = 'Hodoku'
+        // img/hodoku02.ico is the Windows icon already shipped in the repo.
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            imageOptions = ['--icon', 'src/img/hodoku02.ico']
+            installerOptions = ['--win-shortcut', '--win-menu']
+        } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+            imageOptions = ['--icon', 'src/img/hodoku02-256.png']
+        } else {
+            imageOptions = ['--icon', 'src/img/hodoku02-256.png']
+        }
+    }
+}
