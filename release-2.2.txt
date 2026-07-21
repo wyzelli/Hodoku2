@@ -25,6 +25,18 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.4.2 (2026-07-21)
+--------------------------
+
+- Fixed: the async SukakuExplainer (SE) difficulty rating showed "SE n/a" for
+  every puzzle when HoDoKu.jar was downloaded and run as a standalone single
+  file, because the vendored SukakuExplainer.jar could only be found in a lib/
+  folder beside the jar. SukakuExplainer.jar is now bundled inside HoDoKu.jar
+  and extracted to a temp file on first use, so the standalone jar (and the
+  Windows app image, once rebuilt) computes SE ratings with no extra files
+  required. The existing overrides (system property hodoku.serate.jar, env var
+  SERATE_JAR, external lib/SukakuExplainer.jar) still take priority when present.
+
 Version 2.4.1 (2026-07-21)
 --------------------------
 

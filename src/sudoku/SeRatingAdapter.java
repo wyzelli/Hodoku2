@@ -20,8 +20,11 @@ package sudoku;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.CodeSource;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -45,7 +48,14 @@ import java.util.regex.Pattern;
  * <li>environment variable {@code SERATE_JAR}</li>
  * <li>{@code lib/SukakuExplainer.jar} relative to the working directory and to
  * the location HoDoKu itself is running from</li>
+ * <li>the copy of {@code SukakuExplainer.jar} bundled inside HoDoKu.jar as a
+ * classpath resource, extracted once to a temp file and reused for the rest of
+ * the JVM run. This is what makes the standalone {@code HoDoKu.jar} download
+ * self-sufficient: SE rating works even when the jar is run alone from an
+ * arbitrary directory with no {@code lib/} beside it</li>
  * </ol>
+ * The external locations take priority so source builds and explicit overrides
+ * still win over the bundled copy.
  * When the jar cannot be found, or the puzzle is invalid/unsolvable, or the
  * process exceeds {@link #timeoutSeconds}, {@code null} is returned, which the
  * caller maps to the "SE n/a" status.
@@ -66,6 +76,10 @@ public class SeRatingAdapter {
 
 	private static final String SERATE_MAIN = "diuf.sudoku.test.serate";
 	private static final String JAR_NAME = "SukakuExplainer.jar";
+	/** Classpath location of the SukakuExplainer jar bundled inside HoDoKu.jar. */
+	private static final String EMBEDDED_JAR_RESOURCE = "/sudoku/serate/" + JAR_NAME;
+	/** Extracted copy of the embedded jar, cached for the lifetime of the JVM. */
+	private static volatile File extractedJar;
 	/** serate emits ratings as a floating point number, e.g. "7.2". */
 	private static final Pattern RATING = Pattern.compile("(\\d+(?:\\.\\d+)?)");
 
@@ -221,7 +235,39 @@ public class SeRatingAdapter {
 				return f;
 			}
 		}
-		return null;
+		return extractEmbeddedJar();
+	}
+
+	/**
+	 * Final fallback: use the {@code SukakuExplainer.jar} bundled inside HoDoKu.jar.
+	 * It is extracted to a temp file on first use and the same file is reused for
+	 * subsequent rating requests in this JVM. Returns {@code null} only when the
+	 * resource is genuinely absent (e.g. a stripped build), letting the caller fall
+	 * through to the "jar not found" path.
+	 */
+	private File extractEmbeddedJar() {
+		File cached = extractedJar;
+		if (cached != null && cached.isFile()) {
+			return cached;
+		}
+		synchronized (SeRatingAdapter.class) {
+			if (extractedJar != null && extractedJar.isFile()) {
+				return extractedJar;
+			}
+			try (InputStream in = SeRatingAdapter.class.getResourceAsStream(EMBEDDED_JAR_RESOURCE)) {
+				if (in == null) {
+					return null;
+				}
+				File tmp = File.createTempFile("hodoku-serate-", ".jar");
+				tmp.deleteOnExit();
+				Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				extractedJar = tmp;
+				return tmp;
+			} catch (Exception ex) {
+				LOG.log(Level.WARNING, "Failed to extract bundled SukakuExplainer jar", ex);
+				return null;
+			}
+		}
 	}
 
 	private java.util.List<File> candidateDirs() {
