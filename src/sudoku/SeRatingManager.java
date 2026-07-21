@@ -47,6 +47,7 @@ public class SeRatingManager {
 
 	private final JLabel label;
 	private final AtomicLong generation = new AtomicLong(0);
+	private final SeRatingAdapter adapter = new SeRatingAdapter();
 	private SwingWorker<Double, Void> currentWorker;
 
 	public SeRatingManager(JLabel label) {
@@ -115,38 +116,15 @@ public class SeRatingManager {
 	}
 
 	/**
-	 * Computes the SE difficulty rating for the given puzzle.
-	 *
-	 * TODO(Phase 2): replace this mock with a call to a real SukakuExplainer
-	 * adapter that solves {@code givens} and returns the SE difficulty rating, or
-	 * a negative/{@code null} value to signal an invalid/unsolvable puzzle (which
-	 * maps to the "SE n/a" state). The worker lifecycle, stale-request protection
-	 * and trigger wiring around this method must stay unchanged.
+	 * Computes the SE difficulty rating for the given puzzle by delegating to the
+	 * real SukakuExplainer {@link SeRatingAdapter}. Returns {@code null} when the
+	 * puzzle cannot be rated (invalid/unsolvable, SE unavailable or timed out),
+	 * which the worker maps to the "SE n/a" state.
 	 *
 	 * @param givens the puzzle clue string
 	 * @return the rating, or {@code null} when the puzzle cannot be rated
 	 */
-	private Double computeRating(String givens) throws InterruptedException {
-		// Simulate a real solve so the full worker lifecycle and UI states can
-		// be exercised end-to-end.
-		Thread.sleep(600);
-		if (givens == null) {
-			return null;
-		}
-		String trimmed = givens.trim();
-		int clues = 0;
-		for (int i = 0; i < trimmed.length(); i++) {
-			char c = trimmed.charAt(i);
-			if (c >= '1' && c <= '9') {
-				clues++;
-			}
-		}
-		// A classic Sudoku with a unique solution needs at least 17 givens;
-		// treat anything with fewer as unratable ("n/a").
-		if (clues < 17) {
-			return null;
-		}
-		// Plausible SE ratings run from ~1.0 (trivial) to ~11.0 (hardest known).
-		return 1.0 + (Math.abs(trimmed.hashCode()) % 100) / 10.0;
+	private Double computeRating(String givens) {
+		return adapter.rate(givens);
 	}
 }
