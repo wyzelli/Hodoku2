@@ -33,6 +33,24 @@ application {
     mainClass = 'sudoku.Main'
 }
 
+// Single source of truth for the version shown inside the app: generate a
+// version.properties resource from the Gradle project version and read it at
+// runtime (MainFrame.VERSION). Previously the displayed version was a hardcoded
+// string in MainFrame.java, so a `version` bump here did not reach the compiled
+// jar or the jpackage app image, and the two drifted apart.
+def generatedVersionDir = layout.buildDirectory.dir('generated/version')
+def generateVersionProperties = tasks.register('generateVersionProperties') {
+    def outFile = generatedVersionDir.map { it.file('version.properties') }
+    inputs.property('version', project.version.toString())
+    outputs.file(outFile)
+    doLast {
+        def f = outFile.get().asFile
+        f.parentFile.mkdirs()
+        f.text = "version=${project.version}\n"
+    }
+}
+sourceSets.main.output.dir(generatedVersionDir, builtBy: generateVersionProperties)
+
 // Keep the familiar dist/HoDoKu.jar name and location instead of Gradle's
 // default build/libs/Hodoku2.jar, so existing docs/shortcuts still work.
 jar {
@@ -55,6 +73,9 @@ runtime {
     jpackage {
         imageName = 'Hodoku'
         installerName = 'Hodoku'
+        // Keep the app image / installer metadata (--app-version) in lock-step
+        // with the project version so it never lags behind the jar again.
+        appVersion = project.version.toString()
         // img/hodoku02.ico is the Windows icon already shipped in the repo.
         if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
             imageOptions = ['--icon', 'src/img/hodoku02.ico']

@@ -104,7 +104,14 @@ import solver.SudokuSolverFactory;
 public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 
 	private static final long serialVersionUID = 1L;
-	public static final String VERSION = "Hodoku - v2.4.0";
+	/**
+	 * Displayed application version. Read at runtime from the build-generated
+	 * {@code /version.properties} resource so it always matches the Gradle
+	 * project version (single source of truth); see build.gradle. The fallback
+	 * is only used when running without that generated resource (e.g. straight
+	 * from an IDE without a Gradle build).
+	 */
+	public static final String VERSION;
 
 	// public static final String BUILD = "Build 16";
 	public static final String BUILD;
@@ -362,6 +369,28 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 	static {
 		String[] dummy = REV.split(" ");
 		BUILD = "Build " + dummy[1];
+		VERSION = "Hodoku - v" + readVersion();
+	}
+
+	/**
+	 * Reads the project version from the build-generated {@code version.properties}
+	 * resource. Falls back to {@code "dev"} when the resource is absent so it is
+	 * obvious the app was launched without a proper Gradle build.
+	 */
+	private static String readVersion() {
+		try (java.io.InputStream in = MainFrame.class.getResourceAsStream("/version.properties")) {
+			if (in != null) {
+				java.util.Properties props = new java.util.Properties();
+				props.load(in);
+				String version = props.getProperty("version");
+				if (version != null && !version.trim().isEmpty()) {
+					return version.trim();
+				}
+			}
+		} catch (Exception ex) {
+			// fall through to the fallback below
+		}
+		return "dev";
 	}
 
 	/**
