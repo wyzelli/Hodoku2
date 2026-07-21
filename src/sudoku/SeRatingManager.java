@@ -1,0 +1,152 @@
+/*
+ * Copyright (C) 2008-24  Bernhard Hobiger
+ *
+ * This file is part of HoDoKu.
+ *
+ * HoDoKu is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HoDoKu is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HoDoKu. If not, see <http://www.gnu.org/licenses/>.
+ */
+package sudoku;
+
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
+import javax.swing.JLabel;
+import javax.swing.SwingWorker;
+
+/**
+ * Manages asynchronous computation of the SukakuExplainer (SE) difficulty
+ * rating that is shown in the status bar next to HoDoKu's own difficulty text.
+ * <p>
+ * The rating is calculated on a background thread ({@link SwingWorker}) so the
+ * event dispatch thread is never blocked. Every request is tagged with a
+ * monotonically increasing generation id. When a new puzzle is loaded before an
+ * older calculation has finished, the older worker is cancelled and its result
+ * is discarded (stale-request protection): a superseded worker must never touch
+ * the UI, so a slow calculation can never overwrite a newer rating.
+ * <p>
+ * All public methods must be called on the event dispatch thread.
+ */
+public class SeRatingManager {
+
+	/** Label text when no puzzle is loaded / initial state. */
+	public static final String STATE_IDLE = "SE --";
+	/** Label text while a background calculation is running. */
+	public static final String STATE_CALCULATING = "SE calculating…";
+	/** Label text when the puzzle could not be rated (invalid/unsolvable). */
+	public static final String STATE_NA = "SE n/a";
+
+	private final JLabel label;
+	private final AtomicLong generation = new AtomicLong(0);
+	private SwingWorker<Double, Void> currentWorker;
+
+	public SeRatingManager(JLabel label) {
+		this.label = label;
+		reset();
+	}
+
+	/**
+	 * Resets the label to the idle state and invalidates any running worker.
+	 */
+	public final void reset() {
+		generation.incrementAndGet();
+		cancelCurrent();
+		label.setText(STATE_IDLE);
+	}
+
+	/**
+	 * Requests a new SE rating for the given puzzle. Any previously running
+	 * calculation is cancelled and superseded. The label immediately switches to
+	 * the "calculating" state; the final rating is applied when the background
+	 * worker finishes (unless it has been superseded in the meantime).
+	 *
+	 * @param givens the puzzle as a clue string (typically 81 characters, digits
+	 *               for givens and '.'/'0' for empty cells); may be {@code null}
+	 */
+	public void requestRating(final String givens) {
+		final long myGeneration = generation.incrementAndGet();
+		cancelCurrent();
+		label.setText(STATE_CALCULATING);
+
+		SwingWorker<Double, Void> worker = new SwingWorker<Double, Void>() {
+			@Override
+			protected Double doInBackground() throws Exception {
+				return computeRating(givens);
+			}
+
+			@Override
+			protected void done() {
+				// Stale-request protection: ignore results from cancelled or
+				// superseded workers so they never overwrite a newer rating.
+				if (isCancelled() || myGeneration != generation.get()) {
+					return;
+				}
+				Double rating;
+				try {
+					rating = get();
+				} catch (Exception ex) {
+					rating = null;
+				}
+				if (rating == null || rating < 0) {
+					label.setText(STATE_NA);
+				} else {
+					label.setText(String.format(Locale.US, "SE %.1f", rating));
+				}
+			}
+		};
+		currentWorker = worker;
+		worker.execute();
+	}
+
+	private void cancelCurrent() {
+		if (currentWorker != null && !currentWorker.isDone()) {
+			currentWorker.cancel(true);
+		}
+		currentWorker = null;
+	}
+
+	/**
+	 * Computes the SE difficulty rating for the given puzzle.
+	 *
+	 * TODO(Phase 2): replace this mock with a call to a real SukakuExplainer
+	 * adapter that solves {@code givens} and returns the SE difficulty rating, or
+	 * a negative/{@code null} value to signal an invalid/unsolvable puzzle (which
+	 * maps to the "SE n/a" state). The worker lifecycle, stale-request protection
+	 * and trigger wiring around this method must stay unchanged.
+	 *
+	 * @param givens the puzzle clue string
+	 * @return the rating, or {@code null} when the puzzle cannot be rated
+	 */
+	private Double computeRating(String givens) throws InterruptedException {
+		// Simulate a real solve so the full worker lifecycle and UI states can
+		// be exercised end-to-end.
+		Thread.sleep(600);
+		if (givens == null) {
+			return null;
+		}
+		String trimmed = givens.trim();
+		int clues = 0;
+		for (int i = 0; i < trimmed.length(); i++) {
+			char c = trimmed.charAt(i);
+			if (c >= '1' && c <= '9') {
+				clues++;
+			}
+		}
+		// A classic Sudoku with a unique solution needs at least 17 givens;
+		// treat anything with fewer as unratable ("n/a").
+		if (clues < 17) {
+			return null;
+		}
+		// Plausible SE ratings run from ~1.0 (trivial) to ~11.0 (hardest known).
+		return 1.0 + (Math.abs(trimmed.hashCode()) % 100) / 10.0;
+	}
+}

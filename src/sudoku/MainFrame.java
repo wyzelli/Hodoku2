@@ -332,6 +332,9 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 	private javax.swing.JMenuItem playGameMenuItem;
 	private javax.swing.JLabel statusLabelCellCandidate;
 	private javax.swing.JLabel statusLabelLevel;
+	private javax.swing.JLabel statusLabelSeRating;
+	private javax.swing.JSeparator jSeparatorSe;
+	private SeRatingManager seRatingManager;
 	private javax.swing.JLabel statusLabelModus;
 	private javax.swing.JLabel statusLabelCellSelection;
 	private javax.swing.JPanel statusLinePanel;
@@ -379,6 +382,7 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		Options.getInstance().checkAllFonts();
 
 		initComponents();
+		seRatingManager = new SeRatingManager(statusLabelSeRating);
 		setTitleWithFile();
 		outerSplitPane.getActionMap().getParent().remove("startResize");
 		outerSplitPane.getActionMap().getParent().remove("toggleFocus");
@@ -410,6 +414,7 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		font = new Font(fontName, getFont().getStyle(), fontSize);
 		statusLabelCellCandidate.setFont(font);
 		statusLabelLevel.setFont(font);
+		statusLabelSeRating.setFont(font);
 		statusLabelModus.setFont(font);
 		statusLabelCellSelection.setFont(font);
 		progressLabel.setFont(font);
@@ -431,6 +436,7 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 
 		statusLinePanel.setBackground(lafMenuBackColor);
 		statusLabelLevel.setForeground(lafMenuColor);
+		statusLabelSeRating.setForeground(lafMenuColor);
 		summaryPanel.setTitleLabelColors(lafMenuColor, lafMenuBackColor);
 		solutionPanel.setTitleLabelColors(lafMenuColor, lafMenuBackColor);
 		cellZoomPanel.setTitleLabelColors(lafMenuColor, lafMenuBackColor);
@@ -685,6 +691,8 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		statusLabelCellCandidate = new javax.swing.JLabel();
 		jSeparator1 = new javax.swing.JSeparator();
 		statusLabelLevel = new javax.swing.JLabel();
+		statusLabelSeRating = new javax.swing.JLabel();
+		jSeparatorSe = new javax.swing.JSeparator();
 		jSeparator8 = new javax.swing.JSeparator();
 		progressLabel = new javax.swing.JLabel();
 		jSeparator24 = new javax.swing.JSeparator();
@@ -977,6 +985,14 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		statusLabelLevel.setText(bundle.getString("MainFrame.statusLabelLevel.text"));
 		statusLabelLevel.setToolTipText(bundle.getString("MainFrame.statusLabelLevel.toolTipText"));
 		statusLinePanel.add(statusLabelLevel);
+
+		jSeparatorSe.setOrientation(javax.swing.SwingConstants.VERTICAL);
+		jSeparatorSe.setPreferredSize(new java.awt.Dimension(2, 17));
+		statusLinePanel.add(jSeparatorSe);
+
+		statusLabelSeRating.setText(SeRatingManager.STATE_IDLE);
+		statusLabelSeRating.setToolTipText(bundle.getString("MainFrame.statusLabelSeRating.toolTipText"));
+		statusLinePanel.add(statusLabelSeRating);
 
 		jSeparator8.setOrientation(javax.swing.SwingConstants.VERTICAL);
 		jSeparator8.setPreferredSize(new java.awt.Dimension(2, 17));
@@ -2280,6 +2296,7 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 			repaint();
 			setPlay(true);
 			check();
+			triggerSeRating();
 			fixFocus();
 		}
 	}
@@ -2383,8 +2400,9 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 			sudokuFileName = null;
 			setTitleWithFile();
 			check();
+			triggerSeRating();
 		}
-		
+
 		cellZoomPanel.setDefaultMouse(true);
 		sudokuPanel.clearColoring();
 		sudokuPanel.setActiveColor(null);
@@ -2612,12 +2630,13 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 				String content = (String) clipboardContent.getTransferData(DataFlavor.stringFlavor);
 				setPuzzle(content);
 				clearSavePoints();
+				triggerSeRating();
 			}
-			
+
 		} catch (Exception ex) {
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Error pasting from clipboard", ex);
 		}
-		
+
 		check();
 		fixFocus();
 	}
@@ -3260,6 +3279,26 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		setPlay(true);
 		check();
 		repaint();
+	}
+
+	/**
+	 * Kicks off an asynchronous SukakuExplainer (SE) rating calculation for the
+	 * currently loaded puzzle and updates the SE status bar label. This must only
+	 * be wired to stable puzzle load events (open, paste, generate, reset/reload)
+	 * and never to ordinary solving/edit events, so the rating always reflects the
+	 * puzzle as loaded. The actual computation runs on a background thread with
+	 * stale-request protection (see {@link SeRatingManager}).
+	 */
+	private void triggerSeRating() {
+		if (seRatingManager == null) {
+			return;
+		}
+		Sudoku2 sudoku = sudokuPanel.getSudoku();
+		if (sudoku == null) {
+			seRatingManager.reset();
+			return;
+		}
+		seRatingManager.requestRating(sudokuPanel.getSudokuString(ClipboardMode.CLUES_ONLY));
 	}
 
 	/**
@@ -4171,8 +4210,13 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 			ex2.printStackTrace();
 			sudokuFileName = null;
 		}
-		
+
 		setTitleWithFile();
+
+		// Only puzzle loads (not option-file loads, fileType 0) change the grid.
+		if (fileType != 0) {
+			triggerSeRating();
+		}
 	}
 
 	/**
