@@ -32,6 +32,21 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/*
+ * Third-party attribution (see THIRD-PARTY-NOTICES.md):
+ *
+ * This adapter drives SukakuExplainer's `serate` command-line rating tool,
+ * bundled as a separate component under the GNU Lesser General Public License
+ * v2.1 (LGPL-2.1) - distinct from HoDoKu's own GPLv3.
+ *   - SukakuExplainer: https://github.com/SudokuMonster/SukakuExplainer
+ *     (maintained by SudokuMonster and contributors).
+ *   - A modification of "Sudoku Explainer", originally by Nicolas Juillerat.
+ *   - The `serate` entry point was contributed by "gsf".
+ * SE is invoked as a subprocess only; the bundled jar can be replaced by the
+ * end user via the `hodoku.serate.jar` system property or the `SERATE_JAR`
+ * environment variable (LGPL-2.1 relink mechanism).
+ */
+
 /**
  * Adapter around the SukakuExplainer (SE) {@code serate} command line tool,
  * used to compute the SE difficulty rating of a puzzle.

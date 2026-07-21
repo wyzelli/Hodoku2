@@ -25,6 +25,17 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.4.3 (2026-07-21)
+--------------------------
+
+- Added attribution and license notices (LGPL-2.1) for the bundled
+  SukakuExplainer/serate component (SukakuExplainer by SudokuMonster, a
+  modification of Sudoku Explainer by Nicolas Juillerat, with the serate entry
+  point contributed by gsf). Added a "Third-party components" section to
+  README.md, a THIRD-PARTY-NOTICES.md file, the full LGPL-2.1 text under
+  licenses/, an attribution line in the About dialog, and a header note in
+  SeRatingAdapter.java. HoDoKu's own GPLv3 license is unchanged.
+
 Version 2.4.2 (2026-07-21)
 --------------------------
 

@@ -37,6 +37,7 @@ public class AboutDialog extends javax.swing.JDialog {
 	private javax.swing.JLabel copyleftLabel;
 	private javax.swing.JLabel copyrightLabel;
 	private javax.swing.JLabel logoLabel;
+	private javax.swing.JLabel seCreditLabel;
 	private javax.swing.JLabel versionLabel;
 
 	/**
@@ -71,6 +72,7 @@ public class AboutDialog extends javax.swing.JDialog {
 		versionLabel = new javax.swing.JLabel();
 		copyrightLabel = new javax.swing.JLabel();
 		copyleftLabel = new javax.swing.JLabel();
+		seCreditLabel = new javax.swing.JLabel();
 		logoLabel = new javax.swing.JLabel();
 		closeButton = new javax.swing.JButton();
 
@@ -87,6 +89,12 @@ public class AboutDialog extends javax.swing.JDialog {
 
 		copyleftLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 		copyleftLabel.setText(bundle.getString("AboutDialog.copyleftLabel.text"));
+
+		seCreditLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		seCreditLabel.setFont(new java.awt.Font("Tahoma", 0, 10));
+		seCreditLabel.setText("<html><center>SE rating powered by SukakuExplainer "
+				+ "(Nicolas Juillerat, gsf, SudokuMonster) &mdash; LGPL-2.1<br>"
+				+ "https://github.com/SudokuMonster/SukakuExplainer</center></html>");
 
 		logoLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 		logoLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/gplv3-127x51.png")));
@@ -112,6 +120,8 @@ public class AboutDialog extends javax.swing.JDialog {
 										Short.MAX_VALUE)
 								.addComponent(versionLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)
 								.addComponent(copyleftLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 375,
+										Short.MAX_VALUE)
+								.addComponent(seCreditLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 375,
 										Short.MAX_VALUE)))
 						.addGroup(layout.createSequentialGroup().addGap(147, 147, 147).addComponent(closeButton,
 								javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -123,6 +133,9 @@ public class AboutDialog extends javax.swing.JDialog {
 								javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
 						.addGap(18, 18, 18)
 						.addComponent(copyleftLabel, javax.swing.GroupLayout.PREFERRED_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+						.addGap(18, 18, 18)
+						.addComponent(seCreditLabel, javax.swing.GroupLayout.PREFERRED_SIZE,
 								javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
 						.addGap(18, 18, 18).addComponent(logoLabel)
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 49, Short.MAX_VALUE)
