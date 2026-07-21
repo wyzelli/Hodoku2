@@ -25,6 +25,16 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.4.0 (2026-07-21)
+--------------------------
+
+- Fixed: main window/grid losing keyboard focus after clicking a digit in the
+  Exclude Candidates panel of the Active Cell tab (issue #1)
+- Modernized build system: replaced NetBeans/Ant/launch4j with Gradle +
+  jpackage. HoDoKu.jar is unchanged in usage; the Windows distribution is
+  now a self-contained app image (Hodoku-windows.zip) with a bundled JRE,
+  so a separate Java install is no longer required on Windows.
+
 Version 2.3.2 (2022-06-26)
 --------------------------
 
