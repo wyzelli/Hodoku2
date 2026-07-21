@@ -25,6 +25,19 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.4.1 (2026-07-21)
+--------------------------
+
+- Added: asynchronous SukakuExplainer (SE) difficulty rating shown in the
+  status bar next to HoDoKu's own difficulty. The rating is computed on a
+  background worker (the UI never blocks) with stale-request protection, and
+  is refreshed only on stable puzzle load events (open, paste, generate,
+  reset), never while solving. Puzzles HoDoKu considers invalid show "SE n/a".
+- Fixed: the jpackage Windows app image reported a stale version (e.g. 2.3.2)
+  because the displayed version was hardcoded in the source separately from
+  the build. The version is now single-sourced from the Gradle build, so the
+  jar and the app image always report the same version.
+
 Version 2.4.0 (2026-07-21)
 --------------------------
 
