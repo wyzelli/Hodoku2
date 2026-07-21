@@ -65,6 +65,18 @@ public class SeRatingManager {
 	}
 
 	/**
+	 * Sets the label directly to the "SE n/a" state and invalidates any running
+	 * worker. Used when the caller already knows the puzzle cannot be rated (e.g.
+	 * HoDoKu has determined it is invalid/unsolvable), so no background
+	 * calculation is started.
+	 */
+	public void setUnavailable() {
+		generation.incrementAndGet();
+		cancelCurrent();
+		label.setText(STATE_NA);
+	}
+
+	/**
 	 * Requests a new SE rating for the given puzzle. Any previously running
 	 * calculation is cancelled and superseded. The label immediately switches to
 	 * the "calculating" state; the final rating is applied when the background

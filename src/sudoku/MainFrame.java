@@ -3286,19 +3286,26 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 	 * currently loaded puzzle and updates the SE status bar label. This must only
 	 * be wired to stable puzzle load events (open, paste, generate, reset/reload)
 	 * and never to ordinary solving/edit events, so the rating always reflects the
-	 * puzzle as loaded. The actual computation runs on a background thread with
-	 * stale-request protection (see {@link SeRatingManager}).
+	 * puzzle as loaded. The rating is only requested once HoDoKu itself has
+	 * confirmed the puzzle is valid ({@link SudokuStatus#VALID}); invalid,
+	 * unsolvable, multiple-solution or empty puzzles go straight to "SE n/a"
+	 * without spawning the serate subprocess. The actual computation runs on a
+	 * background thread with stale-request protection (see {@link SeRatingManager}).
 	 */
 	private void triggerSeRating() {
 		if (seRatingManager == null) {
 			return;
 		}
 		Sudoku2 sudoku = sudokuPanel.getSudoku();
-		if (sudoku == null) {
-			seRatingManager.reset();
-			return;
+		if (sudoku != null && sudoku.getStatus() == SudokuStatus.VALID) {
+			// HoDoKu has already confirmed (synchronously, in SudokuPanel.setSudoku)
+			// that this puzzle has a unique solution, so it is worth rating.
+			seRatingManager.requestRating(sudokuPanel.getSudokuString(ClipboardMode.CLUES_ONLY));
+		} else {
+			// Empty / invalid / multiple-solution puzzle: HoDoKu already knows it
+			// cannot be rated, so go straight to "SE n/a" without spawning serate.
+			seRatingManager.setUnavailable();
 		}
-		seRatingManager.requestRating(sudokuPanel.getSudokuString(ClipboardMode.CLUES_ONLY));
 	}
 
 	/**
