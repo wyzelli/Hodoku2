@@ -433,7 +433,7 @@ public final class Options {
 	public static final int INITIAL_VERT_DIVIDER_LOC = -1; // used to store window layout at shutdown
 	// public static final int INITIAL_HORZ_DIVIDER_LOC = 524; // used to store
 	// window layout at shutdown
-	public static final int INITIAL_HORZ_DIVIDER_LOC = 627; // used to store window layout at shutdown
+	public static final int INITIAL_HORZ_DIVIDER_LOC = 730; // used to store window layout at shutdown (raised to give the grid area more height and shrink the oversized Hints pane at the 1000x1000 default)
 	public static final int INITIAL_DISP_MODE = 4; // 0 .. sudoku only, 1 .. summary, 2 .. solution, 3 .. all steps, 4 .. active cell
 	public static final int INITIAL_X_POS = -1; // used to store window layout at shutdown
 	public static final int INITIAL_Y_POS = -1; // used to store window layout at shutdown
