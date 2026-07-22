@@ -429,12 +429,12 @@ public final class Options {
 	public static final int INITIAL_HEIGHT = 844; // used to store window layout at shutdown
 	// public static final int INITIAL_WIDTH = 540; // used to store window layout
 	// at shutdown
-	public static final int INITIAL_WIDTH = 643; // used to store window layout at shutdown
+	public static final int INITIAL_WIDTH = 950; // used to store window layout at shutdown (widened so the default Active Cell side panel is fully visible)
 	public static final int INITIAL_VERT_DIVIDER_LOC = -1; // used to store window layout at shutdown
 	// public static final int INITIAL_HORZ_DIVIDER_LOC = 524; // used to store
 	// window layout at shutdown
 	public static final int INITIAL_HORZ_DIVIDER_LOC = 627; // used to store window layout at shutdown
-	public static final int INITIAL_DISP_MODE = 0; // 0 .. sudoku only, 1 .. summary, 2 .. solution, 3 .. all steps
+	public static final int INITIAL_DISP_MODE = 4; // 0 .. sudoku only, 1 .. summary, 2 .. solution, 3 .. all steps, 4 .. active cell
 	public static final int INITIAL_X_POS = -1; // used to store window layout at shutdown
 	public static final int INITIAL_Y_POS = -1; // used to store window layout at shutdown
 	public static final boolean INITIAL_SHOW_HINT_PANEL = true;
@@ -481,7 +481,7 @@ public final class Options {
 	private boolean isColoringVisible = COLORS_VISIBLE;
 	private boolean isHighlightingGivens = HIGHLIGHT_GIVENS;
 	// Clipboard
-	public static final boolean USE_ZERO_INSTEAD_OF_DOT = false; // as the name says...
+	public static final boolean USE_ZERO_INSTEAD_OF_DOT = true; // as the name says...
 	private boolean useZeroInsteadOfDot = USE_ZERO_INSTEAD_OF_DOT;
 	// Farben und Fonts
 	public static final Color GRID_COLOR = Color.BLACK; // Zeichenfarbe für den Rahmen
