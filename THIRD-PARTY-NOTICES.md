@@ -1,9 +1,9 @@
 # Third-Party Notices
 
-HoDoKu incorporates the third-party component listed below. HoDoKu itself is
+HoDoKu incorporates the third-party components listed below. HoDoKu itself is
 licensed under the GNU General Public License v3 (GPLv3), Copyright 2008-12
 Bernhard Hobiger; that license is unaffected by these notices, which apply only
-to the bundled third-party component.
+to the bundled/derived third-party components.
 
 ---
 
@@ -45,3 +45,23 @@ SukakuExplainer without modifying HoDoKu:
 - or place `SukakuExplainer.jar` in a `lib/` directory beside `HoDoKu.jar`.
 
 Any of these takes priority over the copy bundled inside `HoDoKu.jar`.
+
+---
+
+## SudokuGrid (curved-link drawing technique)
+
+- **Component:** the normalized perpendicular-bulge curve technique used to draw
+  the user-created candidate links, adapted from SudokuGrid's
+  `SudokuPanel.curvedPath` method.
+- **Upstream:** https://github.com/LeoWoerteler/SudokuGrid
+- **Author / attribution:** Leo Wörteler.
+- **License:** MIT License.
+
+### How it is used
+
+No SudokuGrid source code is bundled with HoDoKu. Only the *approach* for
+computing a gentle Bezier curve between two points — placing the control point a
+distance proportional to the chord length along the perpendicular of the chord —
+was reimplemented from scratch in HoDoKu's own `SudokuPanel.curvedPath` (which
+carries an attribution comment pointing here). The MIT License permits this reuse
+with attribution; the reimplemented code is distributed under HoDoKu's GPLv3.
