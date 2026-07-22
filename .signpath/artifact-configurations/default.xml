@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SignPath artifact configuration for the Windows release.
+
+  The CI workflow (.github/workflows/build-windows.yml) submits
+  Hodoku-windows.zip to SignPath. This configuration opens the zip, selects the
+  Hodoku.exe launcher at the archive root, and Authenticode-signs it, then
+  repackages the zip with the signed exe.
+
+  Referenced from the workflow as: artifact-configuration-slug: 'default'.
+  See https://docs.signpath.io/trusted-build-systems/github
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file-set>
+      <include path="*.exe" />
+      <for-each>
+        <authenticode-sign />
+      </for-each>
+    </pe-file-set>
+  </zip-file>
+</artifact-configuration>

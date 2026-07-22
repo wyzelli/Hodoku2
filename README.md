@@ -18,6 +18,47 @@ The project builds with Gradle (no NetBeans/Ant/launch4j needed):
 
 `jpackageImage` bundles a private Java runtime with the app, so end users don't need a separate JRE installed. Run it on Windows to get a native `Hodoku.exe` launcher; the produced image can then be zipped up and dropped into `dist/` to replace the old launch4j-built exe.
 
+## Automated Windows builds
+
+The Windows app image no longer has to be built by hand. The GitHub Actions
+workflow [`.github/workflows/build-windows.yml`](.github/workflows/build-windows.yml)
+runs on `windows-latest` and, on every **push of a release tag** matching the
+`x.y.z` pattern (e.g. `2.4.3`), it:
+
+1. builds `dist/HoDoKu.jar` and the native app image (`build/jpackage/Hodoku/`)
+   with JDK 21,
+2. copies the extra runtime data files (`hodoku.hcfg`, `reglib-1.3.txt`,
+   `exemplars-1.0.txt`, `release-2.2.txt`) next to `Hodoku.exe`,
+3. zips it as `Hodoku-windows.zip`, and
+4. **attaches `Hodoku-windows.zip` and `HoDoKu.jar` to the GitHub Release for
+   that tag automatically** (creating the release if needed).
+
+It can also be run manually from the Actions tab (`workflow_dispatch`), and runs
+on pushes to `main` that touch build-relevant paths so regressions are caught
+before tagging. In all cases the zip and jar are uploaded as downloadable
+workflow artifacts, so they're available even without a release.
+
+### Code signing (pending SignPath Foundation approval)
+
+Code signing is scaffolded but **inert until signing secrets are configured** —
+the sign step is skipped automatically while `SIGNPATH_API_TOKEN` is empty, so
+unsigned builds still succeed. Once the project is approved by
+[SignPath Foundation](https://signpath.org/) for a free open-source certificate,
+the maintainer activates real signing by:
+
+1. Adding two repository secrets (Settings → Secrets and variables → Actions):
+   - `SIGNPATH_API_TOKEN` — the SignPath CI user API token.
+   - `SIGNPATH_ORGANIZATION_ID` — the SignPath organization ID.
+2. Filling in the placeholder values in `build-windows.yml`'s "Sign Hodoku.exe
+   via SignPath" step — `project-slug` (placeholder `hodoku2`) and
+   `signing-policy-slug` (placeholder `release-signing`) — to match the
+   SignPath project/policy that SignPath sets up.
+
+The signing artifact configuration lives at
+[`.signpath/artifact-configurations/default.xml`](.signpath/artifact-configurations/default.xml)
+and signs the `Hodoku.exe` inside the zip via SignPath's
+`<zip-file><pe-file-set>` Authenticode pattern.
+
 ## Third-party components
 
 HoDoKu itself is licensed under the GNU General Public License v3 (GPLv3),
