@@ -426,10 +426,10 @@ public final class Options {
 	public static final int DRAW_MODE = 1;
 	// public static final int INITIAL_HEIGHT = 728; // used to store window layout
 	// at shutdown
-	public static final int INITIAL_HEIGHT = 844; // used to store window layout at shutdown
+	public static final int INITIAL_HEIGHT = 1000; // used to store window layout at shutdown
 	// public static final int INITIAL_WIDTH = 540; // used to store window layout
 	// at shutdown
-	public static final int INITIAL_WIDTH = 950; // used to store window layout at shutdown (widened so the default Active Cell side panel is fully visible)
+	public static final int INITIAL_WIDTH = 851; // used to store window layout at shutdown (widened so the default Active Cell side panel is visible)
 	public static final int INITIAL_VERT_DIVIDER_LOC = -1; // used to store window layout at shutdown
 	// public static final int INITIAL_HORZ_DIVIDER_LOC = 524; // used to store
 	// window layout at shutdown
