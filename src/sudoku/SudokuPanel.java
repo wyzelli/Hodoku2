@@ -1090,7 +1090,11 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 				changed = onRightClick(dto);
 			} else {
 				if (cellZoomPanel.isLinkDrawing()) {
-					if (dto.isLeftClick) {
+					if (dto.ctrlPressed) {
+						// Ctrl+click keeps the default candidate-toggle behavior
+						// even while in link-drawing mode (reuses the default path).
+						changed = onLeftClick(dto);
+					} else if (dto.isLeftClick) {
 						onLinkDrawing(dto);
 					}
 				} else if (cellZoomPanel.isColoring()) {
