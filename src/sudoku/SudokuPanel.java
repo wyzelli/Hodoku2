@@ -43,6 +43,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
+import java.awt.geom.QuadCurve2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -156,6 +157,21 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 	private Stack<Sudoku2> redoStack = new Stack<Sudoku2>();
 	private SortedMap<Integer, Color> coloringMap = new TreeMap<Integer, Color>();
 	private SortedMap<Integer, Color> coloringCandidateMap = new TreeMap<Integer, Color>();
+	// user-drawn candidate links ("user created arrows"); session-only, deliberately
+	// outside the undo/redo stack and .hsol persistence (see UserLink)
+	private List<UserLink> userLinks = new ArrayList<UserLink>();
+	private int pendingLinkIndex = -1;
+	private int pendingLinkCand = -1;
+	private UserLink.LinkType activeLinkType = UserLink.LinkType.STRONG;
+	private static final Color USER_LINK_STRONG_COLOR = new Color(255, 140, 0);
+	private static final Color USER_LINK_WEAK_COLOR = new Color(150, 120, 220);
+	private static final double USER_LINK_CURVE_FACTOR = 0.18;
+	private static final double USER_LINK_DOUBLE_OFFSET = 2.5;
+	private static final int USER_LINK_RING_RADIUS_STRONG = 7;
+	private static final int USER_LINK_RING_RADIUS_WEAK = 10;
+	private static final int USER_LINK_PENDING_RADIUS = 11;
+	private Stroke userLinkStroke = new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+	private Stroke userLinkRingStroke = new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 	private Cursor colorCursor = null;
 	private Cursor colorCursorShift = null;
 	private Cursor oldCursor = null;
@@ -392,7 +408,7 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 					return;
 				}
 
-				if (cellZoomPanel.isColoring()) {
+				if (cellZoomPanel.isColoring() || cellZoomPanel.isLinkDrawing()) {
 					return;
 				}
 
@@ -939,8 +955,63 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 		}
 	}
 	
+	/**
+	 * Handles a left click while "Draw Links" mode is active. The first candidate
+	 * click selects a pending source endpoint; the second commits a new
+	 * {@link UserLink} (or, if a link between the two endpoints already exists,
+	 * removes it). Clicking the pending source again cancels it. User links never
+	 * touch the {@link Sudoku2} grid, so this does not participate in undo/redo.
+	 *
+	 * @param dto
+	 */
+	void onLinkDrawing(MouseClickDTO dto) {
+
+		if (dto.candidate == -1 || !dto.isCandidateClicked) {
+			return;
+		}
+
+		int index = Sudoku2.getIndex(dto.row, dto.col);
+		int cand = dto.candidate;
+
+		// only accept candidates that are actually present in the grid
+		if (!isLinkEndpointValid(index, cand)) {
+			return;
+		}
+
+		if (pendingLinkIndex == -1) {
+			// first click: remember the source endpoint
+			pendingLinkIndex = index;
+			pendingLinkCand = cand;
+		} else if (pendingLinkIndex == index && pendingLinkCand == cand) {
+			// clicking the pending source again cancels it
+			pendingLinkIndex = -1;
+			pendingLinkCand = -1;
+		} else {
+			// second click: toggle the link between the two endpoints
+			UserLink existing = findUserLink(pendingLinkIndex, pendingLinkCand, index, cand);
+			if (existing != null) {
+				userLinks.remove(existing);
+			} else {
+				userLinks.add(new UserLink(pendingLinkIndex, pendingLinkCand, index, cand, activeLinkType));
+			}
+			pendingLinkIndex = -1;
+			pendingLinkCand = -1;
+		}
+
+		repaint();
+	}
+
+	private UserLink findUserLink(int i1, int c1, int i2, int c2) {
+		for (UserLink link : userLinks) {
+			if (link.connects(i1, c1, i2, c2)) {
+				return link;
+			}
+		}
+		return null;
+	}
+
 	class MouseClickDTO {
-		
+
 		public int row;
 		public int col;
 		public int candidate;
@@ -1015,14 +1086,22 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 		undoStack.push(sudoku.clone());
 		
 		if (dto.isValidCellIndex) {
-			if (dto.isRightClick) {				
-				changed = onRightClick(dto);				
+			if (dto.isRightClick) {
+				changed = onRightClick(dto);
 			} else {
-				if (cellZoomPanel.isColoring()) {
-					onColoring(dto);		
+				if (cellZoomPanel.isLinkDrawing()) {
+					if (dto.ctrlPressed) {
+						// Ctrl+click keeps the default candidate-toggle behavior
+						// even while in link-drawing mode (reuses the default path).
+						changed = onLeftClick(dto);
+					} else if (dto.isLeftClick) {
+						onLinkDrawing(dto);
+					}
+				} else if (cellZoomPanel.isColoring()) {
+					onColoring(dto);
 				} else if (dto.isLeftClick) {
-					changed = onLeftClick(dto);	
-				}				
+					changed = onLeftClick(dto);
+				}
 			}
 			
 			if (changed) {
@@ -1637,7 +1716,15 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 			}
 			break;
 		case KeyEvent.VK_X:
-			cellZoomPanel.swapColors();
+			if (cellZoomPanel.isLinkDrawing()) {
+				// in link mode, X toggles the active link style instead
+				toggleLinkStyle();
+			} else {
+				cellZoomPanel.swapColors();
+			}
+			break;
+		case KeyEvent.VK_L:
+			clearUserLinks();
 			break;
 		case KeyEvent.VK_E:
 			number++;
@@ -1934,6 +2021,76 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 		coloringCandidateMap.clear();
 		updateCellZoomPanel();
 		mainFrame.check();
+	}
+
+	/**
+	 * Removes all user-drawn links and any half-drawn (pending) link. Bound to the
+	 * {@code L} key, mirroring {@link #clearColoring()} on {@code R}.
+	 */
+	public void clearUserLinks() {
+		userLinks.clear();
+		pendingLinkIndex = -1;
+		pendingLinkCand = -1;
+		repaint();
+	}
+
+	/**
+	 * Cancels a half-drawn link (a source endpoint that was clicked but not yet
+	 * connected to a target). Called when the drawing mode changes.
+	 */
+	public void clearPendingLink() {
+		if (pendingLinkIndex != -1 || pendingLinkCand != -1) {
+			pendingLinkIndex = -1;
+			pendingLinkCand = -1;
+			repaint();
+		}
+	}
+
+	/**
+	 * Toggles the link style used for newly drawn links between STRONG and WEAK.
+	 * Bound to the {@code X} key while "Draw Links" mode is active.
+	 */
+	public void toggleLinkStyle() {
+		activeLinkType = (activeLinkType == UserLink.LinkType.STRONG)
+			? UserLink.LinkType.WEAK
+			: UserLink.LinkType.STRONG;
+		repaint();
+	}
+
+	/**
+	 * A link endpoint is valid only while the cell is unsolved and the candidate is
+	 * still present. Used by the reconciliation sweep to drop stale links.
+	 *
+	 * @param index
+	 * @param cand
+	 * @return
+	 */
+	private boolean isLinkEndpointValid(int index, int cand) {
+		return sudoku.getValue(index) == 0 && sudoku.isCandidate(index, cand, !showCandidates);
+	}
+
+	/**
+	 * Defensive reconciliation: candidate removal is not funnelled through a single
+	 * hook in this codebase (solving, elimination and undo/redo all mutate the grid
+	 * differently), so instead of tracking every mutation site we validate every
+	 * link against the current grid state right before drawing and drop any whose
+	 * endpoint candidate is gone.
+	 */
+	private void reconcileUserLinks() {
+		if (!userLinks.isEmpty()) {
+			Iterator<UserLink> it = userLinks.iterator();
+			while (it.hasNext()) {
+				UserLink link = it.next();
+				if (!isLinkEndpointValid(link.getSourceIndex(), link.getSourceCand())
+					|| !isLinkEndpointValid(link.getTargetIndex(), link.getTargetCand())) {
+					it.remove();
+				}
+			}
+		}
+		if (pendingLinkIndex != -1 && !isLinkEndpointValid(pendingLinkIndex, pendingLinkCand)) {
+			pendingLinkIndex = -1;
+			pendingLinkCand = -1;
+		}
 	}
 
 	/**
@@ -2904,6 +3061,9 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 				drawChain(g2, chain, cellSize, ddy, allBlack);
 			}
 		}
+
+		// user-drawn candidate links: independent of the hint step above
+		drawUserLinks(g2, ddy);
 	}
 
 	/**
@@ -3170,6 +3330,140 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
 		p1.y += pY;
 		p2.x -= pX;
 		p2.y -= pY;
+	}
+
+	/**
+	 * Draws all user-created candidate links plus the pending source highlight.
+	 * Runs a reconciliation sweep first so links whose endpoint candidate has since
+	 * been removed (solved, eliminated, undo/redo) never render.
+	 *
+	 * @param g2
+	 * @param ddy diameter of the candidate background circle; used to trim the line
+	 *            so it starts/ends clear of the candidate glyph
+	 */
+	private void drawUserLinks(Graphics2D g2, double ddy) {
+
+		reconcileUserLinks();
+
+		if (userLinks.isEmpty() && pendingLinkIndex == -1) {
+			return;
+		}
+
+		Stroke oldStroke = g2.getStroke();
+		Color oldColor = g2.getColor();
+
+		for (UserLink link : userLinks) {
+			Point2D.Double p1 = getCandKoord(link.getSourceIndex(), link.getSourceCand(), cellSize);
+			Point2D.Double p2 = getCandKoord(link.getTargetIndex(), link.getTargetCand(), cellSize);
+			Color color = (link.getLinkType() == UserLink.LinkType.STRONG)
+				? USER_LINK_STRONG_COLOR
+				: USER_LINK_WEAK_COLOR;
+
+			// the curve trims its endpoints in place, so pass clones and keep the
+			// originals (candidate centres) for the highlight rings
+			drawUserLink(g2, (Point2D.Double) p1.clone(), (Point2D.Double) p2.clone(), ddy, link.getLinkType(), color);
+			drawEndpointRing(g2, p1, link.getLinkType(), color);
+			drawEndpointRing(g2, p2, link.getLinkType(), color);
+		}
+
+		// pending source endpoint: an unfilled ring in the active style's colour
+		if (pendingLinkIndex != -1) {
+			Point2D.Double ps = getCandKoord(pendingLinkIndex, pendingLinkCand, cellSize);
+			Color pc = (activeLinkType == UserLink.LinkType.STRONG)
+				? USER_LINK_STRONG_COLOR
+				: USER_LINK_WEAK_COLOR;
+			g2.setColor(pc);
+			g2.setStroke(userLinkRingStroke);
+			int r = USER_LINK_PENDING_RADIUS;
+			g2.drawOval((int) Math.round(ps.x - r), (int) Math.round(ps.y - r), 2 * r, 2 * r);
+		}
+
+		g2.setStroke(oldStroke);
+		g2.setColor(oldColor);
+	}
+
+	/**
+	 * Draws a single user link as a curved line (no arrowheads): a WEAK link is one
+	 * curve, a STRONG link is a double (two parallel) curve.
+	 *
+	 * @param g2
+	 * @param p1   source endpoint (trimmed in place)
+	 * @param p2   target endpoint (trimmed in place)
+	 * @param ddy  candidate circle diameter, for the endpoint gap
+	 * @param type link style
+	 * @param color link colour
+	 */
+	private void drawUserLink(Graphics2D g2, Point2D.Double p1, Point2D.Double p2, double ddy, UserLink.LinkType type, Color color) {
+
+		double alpha = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+		// trim so the line does not overlap the candidate glyph itself
+		adjustEndPoints(p1, p2, alpha, ddy);
+
+		double length = p1.distance(p2);
+		double bulge = length * USER_LINK_CURVE_FACTOR;
+
+		g2.setColor(color);
+		g2.setStroke(userLinkStroke);
+
+		if (type == UserLink.LinkType.WEAK) {
+			g2.draw(curvedPath(p1, p2, bulge));
+		} else {
+			// STRONG: two curves with a small perpendicular offset -> double line
+			g2.draw(curvedPath(p1, p2, bulge - USER_LINK_DOUBLE_OFFSET));
+			g2.draw(curvedPath(p1, p2, bulge + USER_LINK_DOUBLE_OFFSET));
+		}
+	}
+
+	/**
+	 * Draws one unfilled highlight ring centred on a candidate. STRONG uses a
+	 * smaller radius than WEAK, so a candidate that is the endpoint of both a strong
+	 * and a weak link ends up with two independent concentric rings (never blended).
+	 *
+	 * @param g2
+	 * @param p    candidate centre
+	 * @param type link style (selects the radius)
+	 * @param color ring colour
+	 */
+	private void drawEndpointRing(Graphics2D g2, Point2D.Double p, UserLink.LinkType type, Color color) {
+		int r = (type == UserLink.LinkType.STRONG)
+			? USER_LINK_RING_RADIUS_STRONG
+			: USER_LINK_RING_RADIUS_WEAK;
+		g2.setColor(color);
+		g2.setStroke(userLinkRingStroke);
+		g2.drawOval((int) Math.round(p.x - r), (int) Math.round(p.y - r), 2 * r, 2 * r);
+	}
+
+	/**
+	 * Builds a quadratic Bezier curve between two points whose control point is
+	 * pushed perpendicular to the chord by {@code bulge} pixels, giving a gentle
+	 * consistent arc whose curvature scales with the segment length (callers pass a
+	 * bulge proportional to the distance).
+	 * <p>
+	 * The normalized perpendicular-bulge technique is adapted from the MIT-licensed
+	 * project Leo W&ouml;rteler / SudokuGrid
+	 * (https://github.com/LeoWoerteler/SudokuGrid), {@code SudokuPanel.curvedPath}.
+	 * See THIRD-PARTY-NOTICES.md.
+	 *
+	 * @param from  start point
+	 * @param to    end point
+	 * @param bulge perpendicular offset of the control point from the chord midpoint
+	 * @return the curve
+	 */
+	private QuadCurve2D.Double curvedPath(Point2D.Double from, Point2D.Double to, double bulge) {
+		double midX = (from.x + to.x) / 2.0;
+		double midY = (from.y + to.y) / 2.0;
+		double dx = to.x - from.x;
+		double dy = to.y - from.y;
+		double length = Math.hypot(dx, dy);
+		if (length < 1e-6) {
+			return new QuadCurve2D.Double(from.x, from.y, midX, midY, to.x, to.y);
+		}
+		// unit vector perpendicular to the chord
+		double perpX = -dy / length;
+		double perpY = dx / length;
+		double ctrlX = midX + perpX * bulge;
+		double ctrlY = midY + perpY * bulge;
+		return new QuadCurve2D.Double(from.x, from.y, ctrlX, ctrlY, to.x, to.y);
 	}
 
 	/**

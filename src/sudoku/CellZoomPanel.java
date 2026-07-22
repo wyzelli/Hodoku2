@@ -85,6 +85,7 @@ public class CellZoomPanel extends JPanel implements ActionListener {
 	private JRadioButton radioButtonDefault;
 	private JRadioButton radioButtonColorCells;
 	private JRadioButton radioButtonColorCandidates;
+	private JRadioButton radioButtonDrawLinks;
 	private UIColorPalette colorPalette;
 	private UIColorTools colorTools;
 
@@ -165,23 +166,28 @@ public class CellZoomPanel extends JPanel implements ActionListener {
 		String defaultText = bundle.getString("CellZoomPanel.radioButtonDefault.text");
 		String colorCandidatesText = bundle.getString("CellZoomPanel.radioButtonColorCandidates.text");
 		String colorCellsText = bundle.getString("CellZoomPanel.radioButtonColorCells.text");
-		
-		radioButtonPanel = new JPanel(new GridLayout(3, 1));
+		String drawLinksText = bundle.getString("CellZoomPanel.radioButtonDrawLinks.text");
+
+		radioButtonPanel = new JPanel(new GridLayout(4, 1));
 		radioButtonPanel.setSize(130, colorPalette.getHeight());
 		radioButtonGroup = new ButtonGroup();
 		radioButtonDefault = new JRadioButton(defaultText);
 		radioButtonDefault.setSelected(true);
 		radioButtonColorCandidates = new JRadioButton(colorCandidatesText);
 		radioButtonColorCells = new JRadioButton(colorCellsText);
+		radioButtonDrawLinks = new JRadioButton(drawLinksText);
 		radioButtonDefault.addActionListener(this);
 		radioButtonColorCells.addActionListener(this);
 		radioButtonColorCandidates.addActionListener(this);
+		radioButtonDrawLinks.addActionListener(this);
 		radioButtonGroup.add(radioButtonDefault);
 		radioButtonGroup.add(radioButtonColorCandidates);
 		radioButtonGroup.add(radioButtonColorCells);
+		radioButtonGroup.add(radioButtonDrawLinks);
 		radioButtonPanel.add(radioButtonDefault);
 		radioButtonPanel.add(radioButtonColorCandidates);
 		radioButtonPanel.add(radioButtonColorCells);
+		radioButtonPanel.add(radioButtonDrawLinks);
 		add(radioButtonPanel);
 
 		javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -666,6 +672,10 @@ public class CellZoomPanel extends JPanel implements ActionListener {
 	public boolean isColoring() {
 		return isColoringCells() || isColoringCandidates();
 	}
+
+	public boolean isLinkDrawing() {
+		return radioButtonDrawLinks.isSelected();
+	}
 	
 	public void setDefaultMouse(boolean enable) {
 		if (!radioButtonDefault.isSelected() && enable) {
@@ -700,15 +710,26 @@ public class CellZoomPanel extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
+		// switching modes always cancels a half-drawn link
+		if (sudokuPanel != null) {
+			sudokuPanel.clearPendingLink();
+		}
+
 		if (e.getSource() == radioButtonDefault) {
 			mainFrame.setColoring(null, false);
 		} else if (e.getSource() == radioButtonColorCells) {
 			mainFrame.setColoring(getPrimaryColor(), true);
 		} else if (e.getSource() == radioButtonColorCandidates) {
 			mainFrame.setColoring(getPrimaryColor(), false);
+		} else if (e.getSource() == radioButtonDrawLinks) {
+			// link drawing is mutually exclusive with coloring; drop the coloring
+			// cursor/active color just like selecting "Default Mouse" would
+			if (sudokuPanel != null) {
+				sudokuPanel.setActiveColor(null);
+			}
 		}
-		
-		mainFrame.check();		
+
+		mainFrame.check();
 		mainFrame.repaint();
 	}
 }
