@@ -30,7 +30,7 @@
 		(async () => {
 			const status = document.getElementById("status");
 			try {
-				await cheerpjInit();
+				await cheerpjInit({ version: 17 });
 				// Display sized to match Options.INITIAL_WIDTH / INITIAL_HEIGHT (1000 x 1000).
 				cheerpjCreateDisplay(1000, 1000);
 				// The jar must be deployed next to this file so it resolves at /app/HoDoKu-web.jar.
