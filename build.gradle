@@ -62,6 +62,42 @@ jar {
     }
 }
 
+// --- Web build (CheerpJ) ---
+// CheerpJ's WebAssembly JVM runs Java bytecode up to Java 17. Compile the
+// existing sources to a Java 17 release target and package a self-contained jar
+// mirroring dist/HoDoKu.jar (same Main-Class, classes and resources), written
+// to build/web/HoDoKu-web.jar. This is entirely separate from the desktop
+// jar/jpackage tasks above, which keep their Java 21 targeting.
+def webClassesDir = layout.buildDirectory.dir('web/classes')
+def compileWebJava = tasks.register('compileWebJava', JavaCompile) {
+    source = sourceSets.main.java
+    classpath = sourceSets.main.compileClasspath
+    destinationDirectory = webClassesDir
+    // Reuse the project's Java 21 toolchain compiler (a manually registered
+    // JavaCompile task does not inherit it automatically).
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    // Emit Java 17 bytecode (major version 61) against the Java 17 API.
+    options.release = 17
+}
+
+tasks.register('webJar', Jar) {
+    dependsOn compileWebJava, generateVersionProperties
+    archiveBaseName = 'HoDoKu-web'
+    archiveVersion = ''
+    destinationDirectory = layout.buildDirectory.dir('web')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'sudoku.Main'
+    }
+    // Java 17 classes, then the same runtime resources the desktop jar bundles
+    // (everything under src that is not a *.java file) plus generated version.properties.
+    from compileWebJava.map { it.destinationDirectory }
+    from(sourceSets.main.resources)
+    from(generatedVersionDir)
+}
+
 // org.beryx.runtime wires up jlink (custom minimal JRE) + jpackage
 // (native installers/executables) - this replaces launch4j. jpackage
 // must be run on the target OS: run this on Windows to get an .exe/.msi,
