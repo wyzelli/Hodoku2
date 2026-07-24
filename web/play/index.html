@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>HoDoKu - Sudoku in your browser</title>
+	<style>
+		html, body {
+			margin: 0;
+			height: 100%;
+			background: #1e1e1e;
+			color: #ddd;
+			font-family: system-ui, sans-serif;
+		}
+		#status {
+			padding: 0.75rem 1rem;
+			font-size: 0.9rem;
+		}
+	</style>
+</head>
+<body>
+	<div id="status">Loading HoDoKu&hellip; the JVM and jar are downloaded on first run, so please be patient.</div>
+	<!--
+		CheerpJ is a WebAssembly JVM that runs standard Java bytecode (up to Java 17)
+		directly in the browser - no plugins, no server-side Java. See
+		https://cheerpj.com/docs/getting-started/Java-app.html
+	-->
+	<script src="https://cjrtnc.leaningtech.com/4.3/loader.js"></script>
+	<script>
+		(async () => {
+			const status = document.getElementById("status");
+			try {
+				await cheerpjInit();
+				// Display sized to match Options.INITIAL_WIDTH / INITIAL_HEIGHT (1000 x 1000).
+				cheerpjCreateDisplay(1000, 1000);
+				// The jar must be deployed next to this file so it resolves at /app/HoDoKu-web.jar.
+				status.remove();
+				await cheerpjRunJar("/app/HoDoKu-web.jar");
+			} catch (err) {
+				status.textContent = "Failed to start HoDoKu: " + err;
+				console.error(err);
+			}
+		})();
+	</script>
+</body>
+</html>

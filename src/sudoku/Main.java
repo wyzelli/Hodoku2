@@ -392,11 +392,19 @@ public class Main {
 	 */
 	public static void main(String[] args) throws IOException {
 
-		Handler fh = new FileHandler("%t/hodoku.log", false);
-		fh.setFormatter(new SimpleFormatter());
-		fh.setLevel(Level.SEVERE);
 		Logger rootLogger = Logger.getLogger("");
-		rootLogger.addHandler(fh);
+		// The file handler needs a writable temp directory. On a read-only or
+		// virtual filesystem (e.g. running under CheerpJ in the browser) creating
+		// it throws IOException; fall back to console-only logging instead of
+		// crashing before the GUI can render.
+		try {
+			Handler fh = new FileHandler("%t/hodoku.log", false);
+			fh.setFormatter(new SimpleFormatter());
+			fh.setLevel(Level.SEVERE);
+			rootLogger.addHandler(fh);
+		} catch (IOException | SecurityException ex) {
+			rootLogger.log(Level.WARNING, "Could not create log file, using console logging only", ex);
+		}
 		rootLogger.setLevel(Level.CONFIG);
 		// rootLogger.setLevel(Level.ALL);
 
