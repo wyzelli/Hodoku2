@@ -320,7 +320,9 @@ public class SudokuPanel extends javax.swing.JPanel implements Printable {
             }
             
             cellSelection.add(intObj );
-            mainFrame.updateCellSelectionStatus();
+            if (mainFrame != null) {
+                mainFrame.updateCellSelectionStatus();
+            }
 	}
 	
 	public void setActiveCell(int row, int col) {		
