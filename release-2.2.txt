@@ -25,6 +25,17 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.5.1 (2026-09-02)
+--------------------------
+
+- Fixed: Extended Print produced a 0KB PDF (or nothing on a real printer).
+  ExtendedPrintProgressDialog rendered puzzles using a headless SudokuPanel
+  constructed with no MainFrame, which threw a NullPointerException as soon
+  as the panel initialized its active cell, killing the print job before
+  anything was written. setActiveCell() now guards the MainFrame callback
+  with a null check, matching the existing pattern in setSudoku(). (#9,
+  reported and diagnosed by RaymiiOrg)
+
 Version 2.4.3 (2026-07-21)
 --------------------------
 
