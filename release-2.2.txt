@@ -25,6 +25,15 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.5.2 (2026-09-04)
+--------------------------
+
+- Restored: Shift+Click now selects the rectangular region between the
+  current active cell and the clicked cell (skipping cells that already
+  have a value), matching the original HoDoKu 2.2.0 behavior. Useful for
+  quickly building a multi-cell selection ahead of Right-Click candidate
+  exclusion. (#2, reported by BrianGodsend)
+
 Version 2.5.1 (2026-09-02)
 --------------------------
 
