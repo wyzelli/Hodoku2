@@ -1,0 +1,201 @@
+<!--
+/*
+ * Copyright (C) 2008-12  Bernhard Hobiger
+ *
+ * This file is part of HoDoKu.
+ *
+ * HoDoKu is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * HoDoKu is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with HoDoKu. If not, see <http://www.gnu.org/licenses/>.
+ */
+    Document   : keyboard_es
+    Spanish translation of keyboard.html
+-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <style type="text/css" media="all">
+    <!--
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 12pt;
+        line-height: 25pt;
+    }
+
+    h1 {
+        font-size: 14pt;
+        font-weight: bold;
+        /*text-align: center;
+        margin: 0 auto; */
+    }
+
+    dt {
+        font-weight: bold;
+        margin: 5px;
+    }
+
+    dd {
+        margin: 5px;
+        margin-left: 40px;
+        margin-bottom: 10px;
+    }
+    -->
+    </style>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  </head>
+  <body>
+    <h1>Funcionamiento normal</h1>
+    <dl>
+        <dt>Uso del rat&oacute;n (funcionamiento normal)</dt>
+        <dd>Al hacer clic en una celda se selecciona esa celda. Si se pulsa [ctrl] o [shift] mientras se hace clic,
+        se selecciona una regi&oacute;n de celdas. Poner celdas/candidatos:
+        <ul>
+            <li>Doble clic en un candidato lo pone en la celda</li>
+            <li>Si a una celda solo le queda un candidato, doble clic en la celda
+            pone ese candidato en la celda</li>
+            <li>Si hay filtros aplicados, doble clic en una celda filtrada pone el
+            candidato filtrado en la celda, si es un Single oculto</li>
+            <li>Doble clic en un candidato mientras se pulsa [ctrl] activa/desactiva el candidato</li>
+        </ul>
+        </dd>
+        <dt>Uso del rat&oacute;n (modo de rat&oacute;n alternativo)</dt>
+        <dd>Selecci&oacute;n de regi&oacute;n como se describe arriba. Poner celdas/candidatos:
+        <ul>
+            <li>Clic izquierdo en un candidato lo pone en la celda</li>
+            <li>Si a una celda solo le queda un candidato, clic izquierdo en un espacio vac&iacute;o de la celda
+            pone ese candidato en la celda</li>
+            <li>Si hay filtros aplicados, clic izquierdo en un espacio vac&iacute;o de una celda filtrada pone el
+            candidato filtrado en la celda, si es un Single oculto</li>
+            <li>Clic derecho en un candidato lo elimina; clic derecho en un espacio vac&iacute;o
+            de una celda activa el candidato correspondiente</li>
+        </ul>
+        </dd>
+        <dt>Uso del rat&oacute;n (modo de coloreado)</dt>
+        <dd>Al hacer clic en un color de la barra de estado o de la vista Celda activa se activa
+        el modo de coloreado. Al hacer clic en una celda/candidato se activa/desactiva el color seleccionado
+        para esa celda/candidato. Al pulsar [X] se intercambia el color primario con el secundario.
+        Al hacer clic en el color de fondo o pulsar [esc] se sale del modo de coloreado. Al hacer clic
+        en el panel con la "R" se sale del modo de coloreado y se borran todos los colores.
+        </dd>
+        <dt>[izquierda], [arriba], [derecha], [abajo]</dt>
+        <dd>Mueve el cursor (la celda resaltada).</dd>
+        <dt>[shift][izquierda], [shift][arriba], [shift][derecha], [shift][abajo]</dt>
+        <dd>Ampl&iacute;a el rango de celdas seleccionadas.</dd>
+        <dt>[shift][ctrl][izquierda], [shift][ctrl][arriba], [shift][ctrl][derecha], [shift][ctrl][abajo]</dt>
+        <dd>Si hay filtros aplicados, el cursor se mueve a la siguiente celda sin resolver
+        que contenga el candidato filtrado.</dd>
+        <dt>[ctrl][izquierda], [ctrl][arriba], [ctrl][derecha], [ctrl][abajo]</dt>
+        <dd>Mueve el cursor a la siguiente celda sin resolver.</dd>
+        <dt>[inicio]</dt>
+        <dd>Mueve el cursor a la columna de m&aacute;s a la izquierda.</dd>
+        <dt>[fin]</dt>
+        <dd>Mueve el cursor a la columna de m&aacute;s a la derecha.</dd>
+        <dt>[ctrl][inicio]</dt>
+        <dd>Mueve el cursor a la fila superior.</dd>
+        <dt>[ctrl][fin]</dt>
+        <dd>Mueve el cursor a la fila inferior.</dd>
+        <dt>[1] ... [9]</dt>
+        <dd>Pone el valor en la celda resaltada; los valores iniciales (en negro)
+        no se pueden sobrescribir.</dd>
+        <dt>[Ctrl][1] ... [Ctrl][9]</dt>
+        <dd>Activa/desactiva el candidato en la celda resaltada.</dd>
+        <dt>[espacio]</dt>
+        <dd>Si hay un filtro activo (ver m&aacute;s abajo), activa/desactiva el candidato filtrado.</dd>
+        <dt>[supr], [retroceso], [0]</dt>
+        <dd>Borra el valor de la celda (los valores iniciales no se pueden borrar).</dd>
+    </dl>
+    <h1>Filtros</h1>
+    <p>Los filtros son de dos tipos: mostrar todas las celdas donde se puede colocar
+    un d&iacute;gito (las celdas se ven en verde) o mostrar todas las celdas donde un d&iacute;gito
+    est&aacute; prohibido (las celdas se ven en rojo).</p>
+    <dl>
+        <dt>[F1] ... [F9]</dt>
+        <dd>Establece/alterna el d&iacute;gito filtrado.</dd>
+        <dt>[shift][F1] ... [shift][F9]</dt>
+        <dd>Establece/alterna el d&iacute;gito filtrado y cambia el modo de filtro (permitido/prohibido).</dd>
+        <dt>[ctrl][F1] ... [ctrl][F9]</dt>
+        <dd>A&ntilde;ade/quita el candidato al/del conjunto de candidatos filtrados. Si hay m&aacute;s de un candidato
+        seleccionado para filtrar, se muestran o bien todas las celdas que contienen al menos un candidato filtrado ('OR'),
+        o bien solo las celdas que contienen todos los candidatos filtrados ('AND').</dd>
+        <dt>[espacio]</dt>
+        <dd>Si hay un filtro activo y la celda actual est&aacute; filtrada, activa/desactiva el candidato filtrado en la celda.</dd>
+        <dt>[intro]</dt>
+        <dd>Si hay un filtro activo y la celda actual est&aacute; filtrada, pone el candidato filtrado en la celda.</dd>
+        <dt>[&gt;], [.]</dt>
+        <dd>Si hay un filtro activo, establece el siguiente d&iacute;gito.</dd>
+        <dt>[&lt;], [,]</dt>
+        <dd>Si hay un filtro activo, establece el d&iacute;gito anterior.</dd>
+    </dl>
+    <h1>Coloreado</h1>
+    <dl>
+        <dt>[a]/[A], [b]/[B], [c]/[C], [d]/[D], [e]/[E]</dt>
+        <dd>Establece/alterna el color de fondo de la celda seleccionada.</dd>
+        <dt>[r]</dt>
+        <dd>Restablece el fondo de todas las celdas.</dd>
+    </dl>
+    <h1>Varios</h1>
+    <dl>
+        <dt>[shift][ctrl]</dt>
+        <dd>Muestra todos los candidatos posibles en la celda con el foco (solo si "Opciones|Mostrar todos los candidatos"
+        no est&aacute; activado).</dd>
+        <dt>[shift][alt]</dt>
+        <dd>Muestra todos los candidatos posibles en todas las celdas (solo si "Opciones|Mostrar todos los candidatos"
+        no est&aacute; activado).</dd>
+    </dl>
+    <h1>Men&uacute; y di&aacute;logos</h1>
+    <dl>
+        <dt>[ctrl][n]</dt>
+        <dd>Crear un nuevo sudoku aleatorio.</dd>
+        <dt>[ctrl][o]</dt>
+        <dd>Abrir archivo de puzle.</dd>
+        <dt>[ctrl][s]</dt>
+        <dd>Guardar sudoku.</dd>
+        <dt>[ctrl][p]</dt>
+        <dd>Imprimir sudoku.</dd>
+        <dt>[alt][x]</dt>
+        <dd>Salir del programa.</dd>
+        <dt>[ctrl][z]</dt>
+        <dd>Deshacer.</dd>
+        <dt>[ctrl][y]</dt>
+        <dd>Rehacer.</dd>
+        <dt>[ctrl][c]</dt>
+        <dd>Copiar candidatos al portapapeles.</dd>
+        <dt>[ctrl][g]</dt>
+        <dd>Copiar valores iniciales al portapapeles.</dd>
+        <dt>[ctrl][v]</dt>
+        <dd>Pegar sudoku desde el portapapeles.</dd>
+        <dt>[ctrl][r]</dt>
+        <dd>Reiniciar partida.</dd>
+        <dt>[ctrl][shift][p]</dt>
+        <dd>Editar preferencias.</dd>
+        <dt>[ctrl][shift][1] ... [ctrl][shift][5]</dt>
+        <dd>Establecer el nivel de dificultad de los sudokus nuevos (1 ... F&aacute;cil a 5 ... Extremo).</dd>
+        <dt>[alt][F12]</dt>
+        <dd>Mostrar pista vaga.</dd>
+        <dt>[ctrl][F12]</dt>
+        <dd>Mostrar pista concreta.</dd>
+        <dt>[F12]</dt>
+        <dd>Mostrar el siguiente paso.</dd>
+        <dt>[F11]</dt>
+        <dd>Colocar todos los singles.</dd>
+        <dt>[ctrl][shift][s]</dt>
+        <dd>Mostrar solo el sudoku.</dd>
+        <dt>[ctrl][shift][u]</dt>
+        <dd>Mostrar el resumen de los pasos usados para resolver el sudoku.</dd>
+        <dt>[ctrl][shift][o]</dt>
+        <dd>Mostrar la(s) soluci&oacute;n(es).</dd>
+        <dt>[ctrl][shift][a]</dt>
+        <dd>Mostrar todos los pasos posibles para el estado actual.</dd>
+    </dl>
+  </body>
+</html>
