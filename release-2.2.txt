@@ -25,6 +25,14 @@ heap size at startup.
 
 Change log
 ==========
+Version 2.6.0 (2026-10-07)
+--------------------------
+
+- Added: Spanish (es) translation covering all dialogs, menus, technique
+  names and the keyboard help page. Select "Español" under Options ->
+  Preferences -> General -> Language. (#14, contributed by Emanuel Marquez
+  / emproducciones2257)
+
 Version 2.5.2 (2026-09-04)
 --------------------------
 
