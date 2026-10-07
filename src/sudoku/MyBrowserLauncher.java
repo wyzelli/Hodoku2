@@ -34,7 +34,7 @@ public class MyBrowserLauncher {
 	/** The singleton instance. */
 	private static MyBrowserLauncher instance = null;
 	/** The url of the project web site. */
-	private static String HTTP_BASE = "http://hodoku.sourceforge.net/";
+	private static String HTTP_BASE = "https://hodoku.dev/";
 	/**
 	 * <code>true</code>, if Desktop class is supported and html files can be
 	 * opened.
@@ -76,7 +76,7 @@ public class MyBrowserLauncher {
 	 * Displays the user manual.
 	 */
 	public void launchUserManual() {
-		String url = HTTP_BASE + "docs.php";
+		String url = HTTP_BASE + "docs.html";
 		browse(url);
 	}
 
@@ -84,7 +84,7 @@ public class MyBrowserLauncher {
 	 * Displays the solving guide.
 	 */
 	public void launchSolvingGuide() {
-		String url = HTTP_BASE + "techniques.php";
+		String url = HTTP_BASE + "techniques.html";
 		browse(url);
 	}
 
@@ -92,7 +92,7 @@ public class MyBrowserLauncher {
 	 * Displays the project homepage.
 	 */
 	public void launchHomePage() {
-		String url = HTTP_BASE + "index.php";
+		String url = HTTP_BASE;
 		browse(url);
 	}
 
@@ -100,7 +100,7 @@ public class MyBrowserLauncher {
 	 * Display the tracker
 	 */
 	public void launchTracker() {
-		String url = "http://sourceforge.net/p/hodoku/bugs-and-feature-requests/";
+		String url = "https://github.com/wyzelli/Hodoku2/issues";
 		browse(url);
 	}
 
@@ -108,7 +108,7 @@ public class MyBrowserLauncher {
 	 * Display the help forum
 	 */
 	public void launchForum() {
-		String url = "http://sourceforge.net/p/hodoku/discussion/907403/";
+		String url = "https://github.com/wyzelli/Hodoku2/issues";
 		browse(url);
 	}
 
