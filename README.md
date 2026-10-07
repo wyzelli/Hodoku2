@@ -1,11 +1,15 @@
 # Hodoku2
 An updated version of HoDoKu in a new repo
 
+**Website: [hodoku.dev](https://hodoku.dev/)** — play HoDoKu in your browser at [hodoku.dev/play](https://hodoku.dev/play/), read the [User Manual](https://hodoku.dev/docs.html) and the [Solving Guide](https://hodoku.dev/techniques.html).
+
+**Download:** get the latest Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest).
+
 This takes the original code from https://hodoku.sourceforge.net/en/index.php, and merges it with the updates by Pseudofish from https://github.com/PseudoFish/Hodoku.
 
 Then this whole set has been updated to work with JRE 21.
 
-There is an exe and a built jar in the dist folder.
+Prebuilt downloads (Windows zip and `HoDoKu.jar`) are attached to each [GitHub Release](https://github.com/wyzelli/Hodoku2/releases), and copies are kept in the `dist` folder.
 
 ## Building
 
