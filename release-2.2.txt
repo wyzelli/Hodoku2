@@ -32,6 +32,9 @@ Version 2.6.0 (2026-10-07)
   names and the keyboard help page. Select "Español" under Options ->
   Preferences -> General -> Language. (#14, contributed by Emanuel Marquez
   / emproducciones2257)
+- Changed: Help menu links (User Manual, Solving Guide, Homepage, bug
+  tracker, forum) now point to hodoku.dev and GitHub instead of the old
+  SourceForge site.
 
 Version 2.5.2 (2026-09-04)
 --------------------------
