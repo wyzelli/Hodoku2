@@ -59,6 +59,12 @@ The signing artifact configuration lives at
 and signs the `Hodoku.exe` inside the zip via SignPath's
 `<zip-file><pe-file-set>` Authenticode pattern.
 
+## Translations
+
+- Spanish (`es`): Emanuel Marquez ([@emproducciones2257](https://github.com/emproducciones2257)).
+  The language files live in `src/intl/*_es.properties` and `src/help/keyboard_es.html`;
+  pick "Español" under Options → Preferences → General → Language.
+
 ## Third-party components
 
 HoDoKu itself is licensed under the GNU General Public License v3 (GPLv3),
