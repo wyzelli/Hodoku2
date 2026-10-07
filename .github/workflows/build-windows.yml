@@ -2,7 +2,8 @@ name: Build Windows app image
 
 # Produces the native Windows app image (Hodoku.exe via jpackage), bundles the
 # extra runtime data files that used to be copied in by hand, zips it as
-# Hodoku-windows.zip, and (on release tags) attaches it to the GitHub Release.
+# Hodoku-windows.zip, builds a machine-wide Hodoku-windows.msi installer from
+# the same image, and (on release tags) attaches both to the GitHub Release.
 # Code signing via SignPath is scaffolded but stays inert until the signing
 # secrets exist (see the "Sign" step and README "Automated Windows builds").
 
@@ -107,6 +108,45 @@ jobs:
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "Project version: $v"
 
+      # Machine-wide MSI installer built from the same app image as the zip.
+      # JDK 21's jpackage needs WiX Toolset 3.x (candle/light) to make an MSI;
+      # install it if the runner image does not already have it.
+      # The upgrade UUID must never change: it is what lets a newer MSI
+      # replace an older install instead of installing alongside it.
+      # Not code signed yet; SignPath currently signs the zip only.
+      - name: Ensure WiX Toolset 3 is available
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset --no-progress -y
+            $wix = Get-ChildItem 'C:\Program Files (x86)' -Directory -Filter 'WiX Toolset v3*' | Sort-Object Name | Select-Object -Last 1
+            if (-not $wix) { throw 'WiX Toolset 3 not found after install' }
+            "$($wix.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          }
+
+      - name: Build MSI installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = '${{ steps.version.outputs.version }}'
+          & "$env:JAVA_HOME\bin\jpackage.exe" --type msi `
+            --app-image build/jpackage/Hodoku `
+            --name Hodoku `
+            --app-version $v `
+            --vendor 'HoDoKu2 project' `
+            --description 'HoDoKu Sudoku generator, solver, trainer and analyzer' `
+            --win-upgrade-uuid 'c06cbb5b-ec77-4455-bb49-3f0a6ff446a4' `
+            --win-dir-chooser `
+            --win-menu --win-menu-group 'HoDoKu' `
+            --win-shortcut --win-shortcut-prompt `
+            --dest build/installer
+          if ($LASTEXITCODE -ne 0) { throw "jpackage failed with exit code $LASTEXITCODE" }
+          $msi = Get-ChildItem build/installer -Filter *.msi | Select-Object -First 1
+          if (-not $msi) { throw 'MSI not produced' }
+          Copy-Item $msi.FullName Hodoku-windows.msi
+          Get-Item Hodoku-windows.msi | Format-List Name, Length
+
       - name: Upload unsigned zip as artifact for signing
         if: ${{ env.SIGNPATH_API_TOKEN != '' }}
         id: unsigned-artifact
@@ -141,6 +181,7 @@ jobs:
           name: hodoku-windows-build
           path: |
             Hodoku-windows.zip
+            Hodoku-windows.msi
             dist/HoDoKu.jar
           if-no-files-found: error
 
@@ -158,4 +199,5 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             Hodoku-windows.zip
+            Hodoku-windows.msi
             dist/HoDoKu.jar

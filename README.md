@@ -3,13 +3,13 @@ An updated version of HoDoKu in a new repo
 
 **Website: [hodoku.dev](https://hodoku.dev/)** — play HoDoKu in your browser at [hodoku.dev/play](https://hodoku.dev/play/), read the [User Manual](https://hodoku.dev/docs.html) and the [Solving Guide](https://hodoku.dev/techniques.html).
 
-**Download:** get the latest Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest). See the [Code signing policy](#code-signing-policy).
+**Download:** get the latest Windows installer (`.msi`), Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest). See the [Code signing policy](#code-signing-policy).
 
 This takes the original code from https://hodoku.sourceforge.net/en/index.php, and merges it with the updates by Pseudofish from https://github.com/PseudoFish/Hodoku.
 
 Then this whole set has been updated to work with JRE 21.
 
-Prebuilt downloads (Windows zip and `HoDoKu.jar`) are attached to each [GitHub Release](https://github.com/wyzelli/Hodoku2/releases), and copies are kept in the `dist` folder.
+Prebuilt downloads (Windows installer, Windows zip and `HoDoKu.jar`) are attached to each [GitHub Release](https://github.com/wyzelli/Hodoku2/releases), and copies are kept in the `dist` folder.
 
 ## Building
 
@@ -33,8 +33,9 @@ runs on `windows-latest` and, on every **push of a release tag** matching the
    with JDK 21,
 2. copies the extra runtime data files (`hodoku.hcfg`, `reglib-1.3.txt`,
    `exemplars-1.0.txt`, `release-2.2.txt`) next to `Hodoku.exe`,
-3. zips it as `Hodoku-windows.zip`, and
-4. **attaches `Hodoku-windows.zip` and `HoDoKu.jar` to the GitHub Release for
+3. zips it as `Hodoku-windows.zip` and builds a machine-wide `Hodoku-windows.msi`
+   installer from the same image (WiX Toolset 3 is installed on the runner if missing), and
+4. **attaches `Hodoku-windows.zip`, `Hodoku-windows.msi` and `HoDoKu.jar` to the GitHub Release for
    that tag automatically** (creating the release if needed).
 
 It can also be run manually from the Actions tab (`workflow_dispatch`), and runs
@@ -96,10 +97,17 @@ difficulty rating runs locally on your computer and sends nothing over the netwo
 
 ### Installing and uninstalling
 
-The Windows release is a zip file with no installer. To install, unzip it anywhere
-and run `Hodoku.exe`. To uninstall, delete the unzipped folder. HoDoKu also saves
-its settings in `hodoku.hcfg` in your user folder (for example
-`C:\Users\<you>\hodoku.hcfg`); delete that file too if you want to remove your settings.
+Windows releases come in two forms:
+
+- **Installer (`Hodoku-windows.msi`):** installs HoDoKu for all users (administrator
+  rights needed) and adds a Start menu entry, with an optional desktop shortcut.
+  To uninstall, use Settings → Apps → Installed apps → Hodoku → Uninstall.
+- **Zip (`Hodoku-windows.zip`):** no installer. Unzip it anywhere and run `Hodoku.exe`.
+  To uninstall, delete the unzipped folder.
+
+Both versions save your settings in `hodoku.hcfg` in your Windows temporary folder
+(`%TEMP%\hodoku.hcfg`, usually `C:\Users\<you>\AppData\Local\Temp`). Uninstalling
+does not remove it; delete that file too if you want to remove your settings.
 
 ## Third-party components
 
