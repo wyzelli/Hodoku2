@@ -95,6 +95,18 @@ jobs:
       # TODO(maintainer): after SignPath Foundation approval, fill in the real
       # values below and add repository secrets SIGNPATH_API_TOKEN and
       # SIGNPATH_ORGANIZATION_ID (see README "Automated Windows builds").
+      # Read the version from build.gradle so SignPath can check that
+      # Hodoku.exe carries the same product version.
+      - name: Read project version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          v=$(sed -n "s/^version = '\\(.*\\)'/\\1/p" build.gradle)
+          test -n "$v" || { echo "could not read version from build.gradle"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Project version: $v"
+
       - name: Upload unsigned zip as artifact for signing
         if: ${{ env.SIGNPATH_API_TOKEN != '' }}
         id: unsigned-artifact
@@ -115,6 +127,8 @@ jobs:
           # Matches .signpath/artifact-configurations/default.xml
           artifact-configuration-slug: 'default'
           github-artifact-id: ${{ steps.unsigned-artifact.outputs.artifact-id }}
+          parameters: |
+            version: "${{ steps.version.outputs.version }}"
           wait-for-completion: true
           # Overwrite the local zip with the signed one returned by SignPath.
           output-artifact-directory: '.'

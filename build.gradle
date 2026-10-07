@@ -114,7 +114,12 @@ runtime {
         appVersion = project.version.toString()
         // img/hodoku02.ico is the Windows icon already shipped in the repo.
         if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-            imageOptions = ['--icon', 'src/img/hodoku02.ico']
+            // --vendor/--description fill the exe's CompanyName/FileDescription
+            // version info (ProductName comes from imageName, ProductVersion
+            // from appVersion); SignPath checks the latter two.
+            imageOptions = ['--icon', 'src/img/hodoku02.ico',
+                            '--vendor', 'HoDoKu2 project',
+                            '--description', 'HoDoKu Sudoku generator, solver, trainer and analyzer']
             installerOptions = ['--win-shortcut', '--win-menu']
         } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
             imageOptions = ['--icon', 'src/img/hodoku02-256.png']
