@@ -4,19 +4,23 @@
 
   The CI workflow (.github/workflows/build-windows.yml) submits
   Hodoku-windows.zip to SignPath. This configuration opens the zip, selects the
-  Hodoku.exe launcher at the archive root, and Authenticode-signs it, then
+  Hodoku.exe launcher at the archive root, checks its product name and version,
+  and Authenticode-signs it, then
   repackages the zip with the signed exe.
 
   Referenced from the workflow as: artifact-configuration-slug: 'default'.
   See https://docs.signpath.io/trusted-build-systems/github
 -->
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <!-- Passed by the workflow from build.gradle's project version (e.g. 2.6.0). -->
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
   <zip-file>
-    <pe-file-set>
-      <include path="*.exe" />
-      <for-each>
-        <authenticode-sign />
-      </for-each>
-    </pe-file-set>
+    <!-- Only the Hodoku launcher is signed, and only if its PE metadata
+         matches this project and the release version being built. -->
+    <pe-file path="Hodoku.exe" product-name="Hodoku" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
   </zip-file>
 </artifact-configuration>

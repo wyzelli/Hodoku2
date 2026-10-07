@@ -3,7 +3,7 @@ An updated version of HoDoKu in a new repo
 
 **Website: [hodoku.dev](https://hodoku.dev/)** — play HoDoKu in your browser at [hodoku.dev/play](https://hodoku.dev/play/), read the [User Manual](https://hodoku.dev/docs.html) and the [Solving Guide](https://hodoku.dev/techniques.html).
 
-**Download:** get the latest Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest).
+**Download:** get the latest Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest). See the [Code signing policy](#code-signing-policy).
 
 This takes the original code from https://hodoku.sourceforge.net/en/index.php, and merges it with the updates by Pseudofish from https://github.com/PseudoFish/Hodoku.
 
@@ -68,6 +68,38 @@ and signs the `Hodoku.exe` inside the zip via SignPath's
 - Spanish (`es`): Emanuel Marquez ([@emproducciones2257](https://github.com/emproducciones2257)).
   The language files live in `src/intl/*_es.properties` and `src/help/keyboard_es.html`;
   pick "Español" under Options → Preferences → General → Language.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
+Windows releases of Hodoku2 (`Hodoku.exe` inside `Hodoku-windows.zip`) are built
+from this repository by GitHub Actions and signed through SignPath. Every signing
+request is approved manually by a project approver.
+
+### Team roles
+
+- Committers and reviewers: [wyzelli](https://github.com/wyzelli)
+- Approvers: [wyzelli](https://github.com/wyzelli)
+
+All pull requests from contributors outside the team are reviewed by a team member
+before merging.
+
+### Privacy policy
+
+This program will not transfer any information to other networked systems unless
+specifically requested by the user or the person installing or operating it.
+
+The only network activity is opening links in your web browser when you choose an
+item from the Help menu (hodoku.dev and GitHub). The optional SukakuExplainer
+difficulty rating runs locally on your computer and sends nothing over the network.
+
+### Installing and uninstalling
+
+The Windows release is a zip file with no installer. To install, unzip it anywhere
+and run `Hodoku.exe`. To uninstall, delete the unzipped folder. HoDoKu also saves
+its settings in `hodoku.hcfg` in your user folder (for example
+`C:\Users\<you>\hodoku.hcfg`); delete that file too if you want to remove your settings.
 
 ## Third-party components
 
