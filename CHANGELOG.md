@@ -1,26 +1,19 @@
+HoDoKu changelog
+================
 
-Release notes
-=============
+HoDoKu is a solver/generator/trainer/analyzer for standard sudoku, written in
+Java/Swing.
 
-HoDoKu is a solver/generator/trainer/analyzer for standard sudoku. It is written in
-Java/Swing and should therefore run on any platform supported by Java (tested
-on Windows and Linux - Ubuntu/GTK+-LAF). Since it is written in Java the
-Java Runtime Environment (JRE) version 1.6 or higher must be installed on your computer
-before you can run HoDoKu. The JRE am be downloaded from 
-http://www.oracle.com/technetwork/java/javase/downloads/index.html
+- Windows: install `Hodoku-windows.msi`, or unzip `Hodoku-windows.zip` and run
+  `Hodoku.exe`. Both include their own Java runtime, so no separate Java
+  install is needed.
+- Other platforms: run `java -jar HoDoKu.jar` (Java 21 or newer).
+- Online: play in the browser at https://hodoku.dev/play/
 
-Available languages: English and german
+Available languages: English, German and Spanish.
 
-For all Windows versions hodoku.exe is the preferred program version. For all other
-operating systems hodoku.jar has to be used. HoDoKu uses rather a lot of memory
-(especially if you use the "Find all available steps" feature). The recommended way
-to run HoDoKu is:
-
-	java -Xmx256m -jar hodoku.jar
-
-Note: the parameter "-Xmx" is specific to the JRE provided by Oracle. If you use a 
-different JRE, please look up the correct parameter for setting the maximum 
-heap size at startup.
+Downloads and per-release notes: https://github.com/wyzelli/Hodoku2/releases
+Website: https://hodoku.dev/
 
 
 Change log
@@ -29,7 +22,7 @@ Version 2.6.0 (2026-10-07)
 --------------------------
 
 - Added: Spanish (es) translation covering all dialogs, menus, technique
-  names and the keyboard help page. Select "Español" under Options ->
+  names and the keyboard help page. Select "EspaÃ±ol" under Options ->
   Preferences -> General -> Language. (#14, contributed by Emanuel Marquez
   / emproducciones2257)
 - Changed: Help menu links (User Manual, Solving Guide, Homepage, bug
