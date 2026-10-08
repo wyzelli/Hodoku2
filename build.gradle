@@ -118,7 +118,7 @@ runtime {
             // version info (ProductName comes from imageName, ProductVersion
             // from appVersion); SignPath checks the latter two.
             imageOptions = ['--icon', 'src/img/hodoku02.ico',
-                            '--vendor', 'HoDoKu2 project',
+                            '--vendor', 'Wyzelli',
                             '--description', 'HoDoKu Sudoku generator, solver, trainer and analyzer']
             installerOptions = ['--win-shortcut', '--win-menu']
         } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {

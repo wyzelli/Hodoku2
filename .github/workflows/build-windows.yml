@@ -27,6 +27,7 @@ on:
       - 'reglib-1.3.txt'
       - 'exemplars-1.0.txt'
       - 'release-2.2.txt'
+      - 'packaging/**'
       - '.github/workflows/build-windows.yml'
       - '.signpath/**'
   workflow_dispatch:
@@ -134,7 +135,7 @@ jobs:
             --app-image build/jpackage/Hodoku `
             --name Hodoku `
             --app-version $v `
-            --vendor 'HoDoKu2 project' `
+            --vendor 'Wyzelli' `
             --description 'HoDoKu Sudoku generator, solver, trainer and analyzer' `
             --win-upgrade-uuid 'c06cbb5b-ec77-4455-bb49-3f0a6ff446a4' `
             --win-dir-chooser `
@@ -146,6 +147,43 @@ jobs:
           if (-not $msi) { throw 'MSI not produced' }
           Copy-Item $msi.FullName Hodoku-windows.msi
           Get-Item Hodoku-windows.msi | Format-List Name, Length
+
+      # Microsoft Store package (MSIX) built from the same app image.
+      # Identity and publisher come from packaging/msix/AppxManifest.xml and
+      # must match Partner Center. Uploaded unsigned: Microsoft signs it after
+      # Store certification, so it is only published as a workflow artifact,
+      # never attached to the GitHub Release (an unsigned MSIX can't be installed
+      # normally). The layout zip is for local testing with Developer Mode:
+      #   Add-AppxPackage -Register .\AppxManifest.xml
+      - name: Build Microsoft Store MSIX package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = '${{ steps.version.outputs.version }}'
+          $layout = 'build/msix/HoDoKu'
+          if (Test-Path build/msix) { Remove-Item build/msix -Recurse -Force }
+          New-Item -ItemType Directory -Path $layout | Out-Null
+          Copy-Item -Path build/jpackage/Hodoku/* -Destination $layout -Recurse
+          Copy-Item -Path packaging/msix/Assets -Destination $layout -Recurse
+          $manifest = (Get-Content packaging/msix/AppxManifest.xml -Raw).Replace('__VERSION__', "$v.0")
+          Set-Content -Path "$layout/AppxManifest.xml" -Value $manifest -Encoding utf8NoBOM
+          $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter makeappx.exe |
+            Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName | Select-Object -Last 1
+          if (-not $makeappx) { throw 'makeappx.exe not found (Windows SDK missing?)' }
+          Write-Host "Using $($makeappx.FullName)"
+          & $makeappx.FullName pack /d $layout /p HoDoKu-store.msix /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx failed with exit code $LASTEXITCODE" }
+          Compress-Archive -Path "$layout/*" -DestinationPath HoDoKu-msix-layout.zip -Force
+          Get-Item HoDoKu-store.msix, HoDoKu-msix-layout.zip | Format-List Name, Length
+
+      - name: Upload Microsoft Store package
+        uses: actions/upload-artifact@v4
+        with:
+          name: hodoku-store-msix
+          path: |
+            HoDoKu-store.msix
+            HoDoKu-msix-layout.zip
+          if-no-files-found: error
 
       - name: Upload unsigned zip as artifact for signing
         if: ${{ env.SIGNPATH_API_TOKEN != '' }}
