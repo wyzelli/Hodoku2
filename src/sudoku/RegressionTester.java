@@ -59,11 +59,16 @@ public class RegressionTester {
 		stepFinder = SudokuSolverFactory.getDefaultSolverInstance().getStepFinder();
 	}
 
-	public void runTest(String testFile) {
-		runTest(testFile, false);
+	public int runTest(String testFile) {
+		return runTest(testFile, false);
 	}
 
-	public void runTest(String testFile, boolean fastMode) {
+	/**
+	 * Runs all test cases in <code>testFile</code>.
+	 *
+	 * @return the number of failed test cases, or -1 if the file could not be read
+	 */
+	public int runTest(String testFile, boolean fastMode) {
 		this.fastMode = fastMode;
 		String msg = "Starting test run for file " + testFile;
 		if (fastMode) {
@@ -79,6 +84,11 @@ public class RegressionTester {
 		ignoredTechniques.clear();
 		failedCases.clear();
 
+		// The library stores empty cells as '.', and results are compared as
+		// strings, so the user's "0 instead of ." display option must not leak in.
+		boolean oldUseZero = Options.getInstance().isUseZeroInsteadOfDot();
+		Options.getInstance().setUseZeroInsteadOfDot(false);
+		boolean readError = false;
 		int anzLines = 0;
 		try {
 			@SuppressWarnings("resource")
@@ -104,6 +114,9 @@ public class RegressionTester {
 			}
 		} catch (IOException ex) {
 			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "error reading test cases...", ex);
+			readError = true;
+		} finally {
+			Options.getInstance().setUseZeroInsteadOfDot(oldUseZero);
 		}
 		System.out.println();
 		System.out.println("Test finished!");
@@ -134,6 +147,7 @@ public class RegressionTester {
 				System.out.println("  Was:      " + failedCases.get(key));
 			}
 		}
+		return readError ? -1 : anzBadCases;
 	}
 
 	/**
