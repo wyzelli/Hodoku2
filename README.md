@@ -47,7 +47,7 @@ workflow artifacts, so they're available even without a release.
 
 `reglib-1.3.txt` holds about 1,100 solver test cases (one technique per line).
 The [`regression.yml`](.github/workflows/regression.yml) workflow builds the jar
-and runs the whole library on every PR that touches the solver or build. It fails
+and runs the whole library on every PR (it is a required check on `main`). It fails
 on any failing case that isn't listed in
 [`.github/regression-known-failures.txt`](.github/regression-known-failures.txt),
 and warns when a listed case starts passing. To run it locally:

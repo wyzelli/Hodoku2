@@ -6,16 +6,9 @@ name: Regression tests
 #   ./gradlew jar && .github/scripts/run-regression.sh
 
 on:
+  # Every PR, with no path filter: "regression" is a required check in the
+  # main ruleset, and a required check that never reports blocks the merge.
   pull_request:
-    paths:
-      - 'src/**'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - 'gradle/**'
-      - 'reglib-1.3.txt'
-      - '.github/regression-known-failures.txt'
-      - '.github/scripts/run-regression.sh'
-      - '.github/workflows/regression.yml'
   push:
     branches:
       - main
