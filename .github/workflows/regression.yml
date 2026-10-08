@@ -1,0 +1,55 @@
+name: Regression tests
+
+# Runs the solver regression library (reglib-1.3.txt, about 1,100 cases, ~15s)
+# against a fresh build and fails on any failure not listed in
+# .github/regression-known-failures.txt. Same check locally:
+#   ./gradlew jar && .github/scripts/run-regression.sh
+
+on:
+  pull_request:
+    paths: &paths
+      - 'src/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'reglib-1.3.txt'
+      - '.github/regression-known-failures.txt'
+      - '.github/scripts/run-regression.sh'
+      - '.github/workflows/regression.yml'
+  push:
+    branches:
+      - main
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build jar
+        run: ./gradlew --no-daemon jar
+
+      - name: Run regression library
+        run: .github/scripts/run-regression.sh dist/HoDoKu.jar
+
+      - name: Upload regression log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-log
+          path: ${{ runner.temp }}/hodoku-regression/regression.log
+          if-no-files-found: ignore

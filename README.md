@@ -43,6 +43,24 @@ on pushes to `main` that touch build-relevant paths so regressions are caught
 before tagging. In all cases the zip and jar are uploaded as downloadable
 workflow artifacts, so they're available even without a release.
 
+## Regression tests
+
+`reglib-1.3.txt` holds about 1,100 solver test cases (one technique per line).
+The [`regression.yml`](.github/workflows/regression.yml) workflow builds the jar
+and runs the whole library on every PR that touches the solver or build. It fails
+on any failing case that isn't listed in
+[`.github/regression-known-failures.txt`](.github/regression-known-failures.txt),
+and warns when a listed case starts passing. To run it locally:
+
+```
+./gradlew jar
+.github/scripts/run-regression.sh
+```
+
+`java -jar dist/HoDoKu.jar /test reglib-1.3.txt` runs the library directly and
+exits with code 1 if any case fails (`/testf` skips the slow cases). Pass the
+file as a relative path: HoDoKu reads any argument starting with `/` as an option.
+
 ### Code signing (pending SignPath Foundation approval)
 
 Code signing is scaffolded but **inert until signing secrets are configured** —
