@@ -721,10 +721,11 @@ public class Main {
 			if (argMap.containsKey("/testf")) {
 
 				RegressionTester tester = new RegressionTester();
-				tester.runTest(argMap.get("/testf"), true);
+				int failed = tester.runTest(argMap.get("/testf"), true);
 
 				if (consoleFrame == null) {
-					System.exit(0);
+					// non-zero exit code so CI can detect regressions
+					System.exit(failed == 0 ? 0 : 1);
 				}
 
 				return;
@@ -733,10 +734,11 @@ public class Main {
 			if (argMap.containsKey("/test")) {
 
 				RegressionTester tester = new RegressionTester();
-				tester.runTest(argMap.get("/test"));
+				int failed = tester.runTest(argMap.get("/test"));
 
 				if (consoleFrame == null) {
-					System.exit(0);
+					// non-zero exit code so CI can detect regressions
+					System.exit(failed == 0 ? 0 : 1);
 				}
 
 				return;
