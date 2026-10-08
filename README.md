@@ -31,8 +31,8 @@ runs on `windows-latest` and, on every **push of a release tag** matching the
 
 1. builds `dist/HoDoKu.jar` and the native app image (`build/jpackage/Hodoku/`)
    with JDK 21,
-2. copies the extra runtime data files (`hodoku.hcfg`, `reglib-1.3.txt`,
-   `exemplars-1.0.txt`, `release-2.2.txt`) next to `Hodoku.exe`,
+2. copies `hodoku.hcfg` and the license files (`LICENSE`,
+   `THIRD-PARTY-NOTICES.md`, `licenses/`) next to `Hodoku.exe`,
 3. zips it as `Hodoku-windows.zip` and builds a machine-wide `Hodoku-windows.msi`
    installer from the same image (WiX Toolset 3 is installed on the runner if missing), and
 4. **attaches `Hodoku-windows.zip`, `Hodoku-windows.msi` and `HoDoKu.jar` to the GitHub Release for

@@ -1,7 +1,7 @@
 name: Build Windows app image
 
 # Produces the native Windows app image (Hodoku.exe via jpackage), bundles the
-# extra runtime data files that used to be copied in by hand, zips it as
+# settings file and license texts next to Hodoku.exe, zips it as
 # Hodoku-windows.zip, builds a machine-wide Hodoku-windows.msi installer from
 # the same image, and (on release tags) attaches both to the GitHub Release.
 # Code signing via SignPath is scaffolded but stays inert until the signing
@@ -24,9 +24,9 @@ on:
       - 'gradlew'
       - 'gradlew.bat'
       - 'hodoku.hcfg'
-      - 'reglib-1.3.txt'
-      - 'exemplars-1.0.txt'
-      - 'release-2.2.txt'
+      - 'LICENSE'
+      - 'THIRD-PARTY-NOTICES.md'
+      - 'licenses/**'
       - 'packaging/**'
       - '.github/workflows/build-windows.yml'
       - '.signpath/**'
@@ -65,14 +65,18 @@ jobs:
         shell: bash
         run: ./gradlew.bat --no-daemon clean build jpackageImage
 
-      # These four files were historically copied in by hand next to Hodoku.exe.
-      - name: Bundle extra runtime data files into the app image
+      # hodoku.hcfg (default settings) plus the license texts that must ship
+      # with the binaries: GPLv3 for HoDoKu, LGPL-2.1 for the bundled
+      # SukakuExplainer. reglib-1.3.txt, exemplars-1.0.txt and the changelog
+      # are repo-only; nothing in the app reads them at runtime.
+      - name: Bundle settings and license files into the app image
         shell: bash
         run: |
           set -euo pipefail
           IMAGE="build/jpackage/Hodoku"
           test -f "$IMAGE/Hodoku.exe" || { echo "app image / Hodoku.exe not found at $IMAGE"; exit 1; }
-          cp hodoku.hcfg reglib-1.3.txt exemplars-1.0.txt release-2.2.txt "$IMAGE/"
+          cp hodoku.hcfg LICENSE THIRD-PARTY-NOTICES.md "$IMAGE/"
+          cp -r licenses "$IMAGE/"
           ls -la "$IMAGE"
 
       # Zip the *contents* of the image folder (Hodoku.exe, app/, runtime/, data
