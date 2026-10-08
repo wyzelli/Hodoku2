@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest for the Microsoft Store build of HoDoKu.
+  Identity values come from Partner Center (HoDoKu > Product identity) and
+  must match exactly, or the Store rejects the upload. __VERSION__ is replaced
+  by the workflow with build.gradle's version plus ".0" (the Store requires the
+  fourth part to be 0).
+  The package is uploaded unsigned; Microsoft signs it after certification.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="Wyzelli.HoDoKu"
+    Publisher="CN=3598E013-531C-4440-AD3E-A656B364F3C4"
+    Version="__VERSION__"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>HoDoKu</DisplayName>
+    <PublisherDisplayName>Wyzelli</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="HoDoKu" Executable="Hodoku.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="HoDoKu"
+        Description="Sudoku generator, solver, trainer and analyzer"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Required for a classic desktop (Win32/Java) app; needs Store approval. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
