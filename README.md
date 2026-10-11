@@ -3,7 +3,14 @@ An updated version of HoDoKu in a new repo
 
 **Website: [hodoku.dev](https://hodoku.dev/)** — play HoDoKu in your browser at [hodoku.dev/play](https://hodoku.dev/play/), read the [User Manual](https://hodoku.dev/docs.html) and the [Solving Guide](https://hodoku.dev/techniques.html).
 
-**Download:** get the latest Windows installer (`.msi`), Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest). See the [Code signing policy](#code-signing-policy).
+<a href="https://apps.microsoft.com/detail/9MW2135XRKH6?mode=direct&cid=github-readme">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://get.microsoft.com/images/en-us%20light.svg">
+    <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Download HoDoKu from the Microsoft Store" width="200">
+  </picture>
+</a>
+
+**Download:** the easiest way on Windows is the [Microsoft Store](https://apps.microsoft.com/detail/9MW2135XRKH6) (automatic updates, no SmartScreen warning). You can also get the latest Windows installer (`.msi`), Windows zip or `HoDoKu.jar` from [Releases](https://github.com/wyzelli/Hodoku2/releases/latest). See the [Code signing policy](#code-signing-policy).
 
 This takes the original code from https://hodoku.sourceforge.net/en/index.php, and merges it with the updates by Pseudofish from https://github.com/PseudoFish/Hodoku.
 
@@ -115,17 +122,22 @@ difficulty rating runs locally on your computer and sends nothing over the netwo
 
 ### Installing and uninstalling
 
-Windows releases come in two forms:
+HoDoKu for Windows comes in three forms:
 
+- **Microsoft Store:** install from the [Store page](https://apps.microsoft.com/detail/9MW2135XRKH6).
+  It updates automatically and needs no administrator rights. To uninstall,
+  right-click HoDoKu in the Start menu and choose Uninstall.
 - **Installer (`Hodoku-windows.msi`):** installs HoDoKu for all users (administrator
   rights needed) and adds a Start menu entry, with an optional desktop shortcut.
   To uninstall, use Settings → Apps → Installed apps → Hodoku → Uninstall.
 - **Zip (`Hodoku-windows.zip`):** no installer. Unzip it anywhere and run `Hodoku.exe`.
   To uninstall, delete the unzipped folder.
 
-Both versions save your settings in `hodoku.hcfg` in your Windows temporary folder
+The installer and zip save your settings in `hodoku.hcfg` in your Windows temporary folder
 (`%TEMP%\hodoku.hcfg`, usually `C:\Users\<you>\AppData\Local\Temp`). Uninstalling
-does not remove it; delete that file too if you want to remove your settings.
+does not remove it; delete that file too if you want to remove your settings. The Store
+version uses an existing `%TEMP%\hodoku.hcfg` if there is one; otherwise it keeps its
+settings in the app's own storage, which Windows removes when you uninstall.
 
 ## Third-party components
 
