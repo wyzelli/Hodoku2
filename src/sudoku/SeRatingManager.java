@@ -20,6 +20,7 @@ package sudoku;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.SwingWorker;
 
@@ -46,13 +47,39 @@ public class SeRatingManager {
 	public static final String STATE_NA = "SE n/a";
 
 	private final JLabel label;
+	/** Status-bar components (e.g. the separator) hidden together with the label. */
+	private final JComponent[] companions;
+	/** True once SE rating is known to be impossible and the label is hidden. */
+	private boolean hidden;
 	private final AtomicLong generation = new AtomicLong(0);
 	private final SeRatingAdapter adapter = new SeRatingAdapter();
 	private SwingWorker<Double, Void> currentWorker;
 
-	public SeRatingManager(JLabel label) {
+	public SeRatingManager(JLabel label, JComponent... companions) {
 		this.label = label;
+		this.companions = companions;
 		reset();
+		if (!adapter.isAvailable()) {
+			hide();
+		}
+	}
+
+	/**
+	 * Hides the SE label (and its companions) for the rest of the session. Used
+	 * when SE rating cannot work in this environment at all, such as the browser
+	 * build, so the status bar never shows a misleading "SE n/a" for puzzles
+	 * that are perfectly rateable.
+	 */
+	private void hide() {
+		hidden = true;
+		label.setVisible(false);
+		for (JComponent c : companions) {
+			c.setVisible(false);
+		}
+		if (label.getParent() != null) {
+			label.getParent().revalidate();
+			label.getParent().repaint();
+		}
 	}
 
 	/**
@@ -61,6 +88,9 @@ public class SeRatingManager {
 	public final void reset() {
 		generation.incrementAndGet();
 		cancelCurrent();
+		if (hidden) {
+			return;
+		}
 		label.setText(STATE_IDLE);
 	}
 
@@ -73,6 +103,9 @@ public class SeRatingManager {
 	public void setUnavailable() {
 		generation.incrementAndGet();
 		cancelCurrent();
+		if (hidden) {
+			return;
+		}
 		label.setText(STATE_NA);
 	}
 
@@ -88,6 +121,9 @@ public class SeRatingManager {
 	public void requestRating(final String givens) {
 		final long myGeneration = generation.incrementAndGet();
 		cancelCurrent();
+		if (hidden) {
+			return;
+		}
 		label.setText(STATE_CALCULATING);
 
 		SwingWorker<Double, Void> worker = new SwingWorker<Double, Void>() {
@@ -108,6 +144,12 @@ public class SeRatingManager {
 					rating = get();
 				} catch (Exception ex) {
 					rating = null;
+				}
+				if (rating == null && !adapter.isAvailable()) {
+					// The subprocess could not be started at all: hide rather
+					// than blame the puzzle with "SE n/a".
+					hide();
+					return;
 				}
 				if (rating == null || rating < 0) {
 					label.setText(STATE_NA);

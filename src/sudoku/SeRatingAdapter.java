@@ -20,6 +20,7 @@ package sudoku;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -95,6 +96,14 @@ public class SeRatingAdapter {
 	private static final String EMBEDDED_JAR_RESOURCE = "/sudoku/serate/" + JAR_NAME;
 	/** Extracted copy of the embedded jar, cached for the lifetime of the JVM. */
 	private static volatile File extractedJar;
+	/**
+	 * Set once SE rating has proved impossible in this JVM: no SukakuExplainer
+	 * jar can be found, or the serate subprocess cannot be started (for example
+	 * in the browser build under CheerpJ, which cannot spawn processes). Once
+	 * set, {@link #rate(String)} returns {@code null} immediately and
+	 * {@link #isAvailable()} reports {@code false}.
+	 */
+	private static volatile boolean disabled;
 	/** serate emits ratings as a floating point number, e.g. "7.2". */
 	private static final Pattern RATING = Pattern.compile("(\\d+(?:\\.\\d+)?)");
 
@@ -106,6 +115,26 @@ public class SeRatingAdapter {
 
 	public SeRatingAdapter(long timeoutSeconds) {
 		this.timeoutSeconds = timeoutSeconds;
+	}
+
+	/**
+	 * Cheap check whether SE rating can be attempted at all: a SukakuExplainer
+	 * jar is configured, present next to HoDoKu, or bundled inside HoDoKu.jar,
+	 * and no earlier attempt has shown that the serate subprocess cannot be
+	 * started. Does not extract the bundled jar or start any process, so it is
+	 * safe to call on the event dispatch thread.
+	 *
+	 * @return {@code false} when SE rating is known to be unavailable
+	 */
+	public boolean isAvailable() {
+		if (disabled) {
+			return false;
+		}
+		if (findExternalJar() == null
+				&& SeRatingAdapter.class.getResource(EMBEDDED_JAR_RESOURCE) == null) {
+			disabled = true;
+		}
+		return !disabled;
 	}
 
 	/**
@@ -125,8 +154,12 @@ public class SeRatingAdapter {
 			return null;
 		}
 
+		if (disabled) {
+			return null;
+		}
 		File jar = locateJar();
 		if (jar == null) {
+			disabled = true;
 			LOG.log(Level.WARNING, "SukakuExplainer jar not found; SE rating unavailable. "
 					+ "Set -D{0}=/path/to/{1} or place it in lib/.", new Object[] { JAR_PROPERTY, JAR_NAME });
 			return null;
@@ -143,7 +176,15 @@ public class SeRatingAdapter {
 			// working directory; run it in the temp dir so HoDoKu's own
 			// working directory is never polluted.
 			pb.directory(new File(System.getProperty("java.io.tmpdir", ".")));
-			process = pb.start();
+			try {
+				process = pb.start();
+			} catch (IOException | UnsupportedOperationException | SecurityException ex) {
+				// The environment cannot run a separate JVM (e.g. CheerpJ in the
+				// browser): SE rating is impossible for every puzzle, not just this one.
+				disabled = true;
+				LOG.log(Level.WARNING, "Cannot start SukakuExplainer; SE rating disabled", ex);
+				return null;
+			}
 			// serate reads no stdin in this mode; close it so it never blocks.
 			process.getOutputStream().close();
 
@@ -226,6 +267,12 @@ public class SeRatingAdapter {
 	}
 
 	private File locateJar() {
+		File external = findExternalJar();
+		return external != null ? external : extractEmbeddedJar();
+	}
+
+	/** Looks for a SukakuExplainer jar outside HoDoKu.jar (property, env, lib/). */
+	private File findExternalJar() {
 		String prop = System.getProperty(JAR_PROPERTY);
 		if (prop != null && !prop.isEmpty()) {
 			File f = new File(prop);
@@ -250,7 +297,7 @@ public class SeRatingAdapter {
 				return f;
 			}
 		}
-		return extractEmbeddedJar();
+		return null;
 	}
 
 	/**
