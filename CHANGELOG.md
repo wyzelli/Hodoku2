@@ -18,6 +18,17 @@ Website: https://hodoku.dev/
 
 Change log
 ==========
+Unreleased
+----------
+
+- Changed: when the SukakuExplainer difficulty rating cannot run at all, the
+  SE label is hidden from the status bar instead of showing "SE n/a" for every
+  puzzle. This applies to the online version at hodoku.dev/play, which can't
+  start the separate rating process. "SE n/a" now only means the puzzle itself
+  can't be rated.
+- Changed: the online version no longer includes SukakuExplainer, so its
+  download is about 750 KB smaller.
+
 Version 2.6.0 (2026-10-07)
 --------------------------
 

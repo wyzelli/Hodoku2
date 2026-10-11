@@ -94,7 +94,12 @@ tasks.register('webJar', Jar) {
     // Java 17 classes, then the same runtime resources the desktop jar bundles
     // (everything under src that is not a *.java file) plus generated version.properties.
     from compileWebJava.map { it.destinationDirectory }
-    from(sourceSets.main.resources)
+    from(sourceSets.main.resources) {
+        // SukakuExplainer runs as a separate JVM process, which CheerpJ cannot
+        // start, so the browser build leaves it out (about 750 KB smaller) and
+        // HoDoKu hides the SE rating label at runtime.
+        exclude 'sudoku/serate/**'
+    }
     from(generatedVersionDir)
 }
 

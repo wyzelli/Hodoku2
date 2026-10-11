@@ -411,7 +411,7 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		Options.getInstance().checkAllFonts();
 
 		initComponents();
-		seRatingManager = new SeRatingManager(statusLabelSeRating);
+		seRatingManager = new SeRatingManager(statusLabelSeRating, jSeparatorSe);
 		setTitleWithFile();
 		outerSplitPane.getActionMap().getParent().remove("startResize");
 		outerSplitPane.getActionMap().getParent().remove("toggleFocus");

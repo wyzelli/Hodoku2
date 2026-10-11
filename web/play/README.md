@@ -67,8 +67,10 @@ headers, just without the multithreading speed-up.
 
 ## Notes
 
-- The in-app "rate puzzle" feature shells out to a separate `serate` JVM process
-  (SukakuExplainer) and will simply be unavailable in the browser; the rest of
-  the application degrades gracefully.
+- The SE difficulty rating runs SukakuExplainer as a separate `serate` JVM
+  process, which CheerpJ cannot start. `webJar` therefore leaves the bundled
+  `SukakuExplainer.jar` out, and HoDoKu hides the SE label in the status bar when
+  no rating jar is available or the process cannot be started. The rest of the
+  application works normally.
 - Actual in-browser rendering must be verified manually after deployment; it
   cannot be exercised in a headless CI environment.
