@@ -21,6 +21,11 @@ Change log
 Unreleased
 ----------
 
+- Fixed: on macOS, generating puzzles (especially in Learning mode) could
+  leave translucent "Create sudoku" ghost windows on the desktop and in the
+  Dock menu. The progress dialog is now always closed properly, and Cancel,
+  Escape and the window close button stop generation without freezing the
+  window (#26).
 - Changed: when the SukakuExplainer difficulty rating cannot run at all, the
   SE label is hidden from the status bar instead of showing "SE n/a" for every
   puzzle. This applies to the online version at hodoku.dev/play, which can't
