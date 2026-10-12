@@ -2382,8 +2382,13 @@ public class MainFrame extends javax.swing.JFrame implements FlavorListener {
 		if (preGenSudoku == null) {
 			// no pre-genrated puzzle available -> do it in GUI
 			GenerateSudokuProgressDialog dlg = new GenerateSudokuProgressDialog(this, true, actDiffLevel, Options.getInstance().getGameMode());
-			dlg.setVisible(true);
-			tmpSudoku = dlg.getSudoku();
+			try {
+				dlg.setVisible(true);
+				tmpSudoku = dlg.getSudoku();
+			} finally {
+				// hiding is not enough on macOS: release the native window
+				dlg.dispose();
+			}
 		} else {
 			tmpSudoku = new Sudoku2();
 			tmpSudoku.setSudoku(preGenSudoku, true);

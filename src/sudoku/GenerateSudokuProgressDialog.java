@@ -39,7 +39,9 @@ import javax.swing.KeyStroke;
 public class GenerateSudokuProgressDialog extends javax.swing.JDialog implements Runnable {
 	private static final long serialVersionUID = 1L;
 	/** The newly generated sudoku. */
-	private Sudoku2 sudoku;
+	private volatile Sudoku2 sudoku;
+	/** Set when the user cancels; the result of the background thread is discarded. */
+	private volatile boolean cancelled = false;
 	/** The background thread, that is used to run the {@link #generator}. */
 	private Thread thread;
 	/** The {@link DifficultyLevel} of the new sudoku. */
@@ -67,7 +69,7 @@ public class GenerateSudokuProgressDialog extends javax.swing.JDialog implements
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				setVisible(false);
+				cancelGeneration();
 			}
 		};
 		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escapeKeyStroke, "ESCAPE");
@@ -75,7 +77,8 @@ public class GenerateSudokuProgressDialog extends javax.swing.JDialog implements
 
 		this.level = level;
 		this.mode = mode;
-		thread = new Thread(this);
+		thread = new Thread(this, "HoDoKu-GenerateSudoku");
+		thread.setDaemon(true);
 		// start the thread only when window is shown (formWindowOpened)
 	}
 
@@ -92,7 +95,7 @@ public class GenerateSudokuProgressDialog extends javax.swing.JDialog implements
 		jPanel1 = new javax.swing.JPanel();
 		cancelButton = new javax.swing.JButton();
 
-		setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 		java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("intl/GenerateSudokuProgressDialog"); // NOI18N
 		setTitle(bundle.getString("GenerateSudokuProgressDialog.title")); // NOI18N
 		setLocationByPlatform(true);
@@ -140,16 +143,31 @@ public class GenerateSudokuProgressDialog extends javax.swing.JDialog implements
 	}// </editor-fold>//GEN-END:initComponents
 
 	private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_cancelButtonActionPerformed
-		thread.interrupt();
-		try {
-			thread.join();
-		} catch (InterruptedException ex) {
-			Logger.getLogger(getClass().getName()).log(Level.SEVERE, "Interrupted while waiting for generation thread",
-					ex);
-		}
-		sudoku = null;
-		setVisible(false);
+		cancelGeneration();
 	}// GEN-LAST:event_cancelButtonActionPerformed
+
+	/**
+	 * Requests cancellation without blocking the EDT. The generator only checks
+	 * the interrupt flag between attempts, so joining here could freeze the UI.
+	 * The dialog is closed by the background thread once it has stopped, which
+	 * keeps the shared default solver/generator from being used concurrently.
+	 */
+	private void cancelGeneration() {
+		cancelled = true;
+		sudoku = null;
+		cancelButton.setEnabled(false);
+		if (thread.isAlive()) {
+			thread.interrupt();
+		} else {
+			closeDialog();
+		}
+	}
+
+	/** Hides and disposes the dialog so no native (macOS) window is left behind. */
+	private void closeDialog() {
+		setVisible(false);
+		dispose();
+	}
 
 	private void formWindowClosing(java.awt.event.WindowEvent evt) {// GEN-FIRST:event_formWindowClosing
 		cancelButtonActionPerformed(null);
@@ -169,21 +187,23 @@ public class GenerateSudokuProgressDialog extends javax.swing.JDialog implements
 	 */
 	@Override
 	public void run() {
-		generator = new BackgroundGenerator();
-		sudoku = generator.generate(level, mode, this);
-		EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				setVisible(false);
-			}
-		});
+		Sudoku2 result = null;
+		try {
+			generator = new BackgroundGenerator();
+			result = generator.generate(level, mode, this);
+		} finally {
+			sudoku = cancelled ? null : result;
+			EventQueue.invokeLater(this::closeDialog);
+		}
 	}
 
 	/**
 	 * Updates the {@link #progressLabel}.
 	 */
 	public void updateProgressLabel() {
-		progressLabel.setText(Integer.toString(generator.getAnz()));
+		if (generator != null && isDisplayable()) {
+			progressLabel.setText(Integer.toString(generator.getAnz()));
+		}
 	}
 
 	/**
