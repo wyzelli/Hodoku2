@@ -203,6 +203,8 @@ public class TablingSolver extends AbstractSolver {
 	private Sudoku2 savedSudoku; // Sudoku2 im Ausgangszustand (für Erstellen der Tables)
 	private int[][] retIndices = new int[MAX_REC_DEPTH][5]; // indices ermitteln
 //    private int[][] retIndices1 = new int[MAX_REC_DEPTH][5]; // indices ermitteln
+	private SudokuSet aicEndCells = new SudokuSet(); // cells of the end node of an AIC
+	private SudokuSet aicEndBuddies = new SudokuSet(); // cells that see all cells in aicEndCells
 	private List<GroupNode> groupNodes = null; // a list with all group nodes for a given sudoku
 	private List<Als> alses = null; // a list with all available ALS for a given sudoku
 //    private SudokuSet alsBuddies = new SudokuSet(); // cells that can see all the cells of the als
@@ -1397,25 +1399,30 @@ public class TablingSolver extends AbstractSolver {
 			int startCandidate = tables[i].getCandidate(0);
 			SudokuSetBase buddies = Sudoku2.buddies[startIndex];
 			for (int j = 1; j < tables[i].index; j++) {
-				if (tables[i].getNodeType(j) != Chain.NORMAL_NODE || !tables[i].isStrong(j)
-						|| tables[i].getCellIndex(j) == startIndex) {
+				int nodeType = tables[i].getNodeType(j);
+				if ((nodeType != Chain.NORMAL_NODE && nodeType != Chain.GROUP_NODE) || !tables[i].isStrong(j)) {
 					// not now
+					continue;
+				}
+				boolean groupEnd = nodeType == Chain.GROUP_NODE;
+				if (!getAicEndCells(tables[i], j, startIndex)) {
+					// the end contains the start cell
 					continue;
 				}
 				if (startCandidate == tables[i].getCandidate(j)) {
 					// check Type 1
 					tmpSet.set(buddies);
-					tmpSet.and(Sudoku2.buddies[tables[i].getCellIndex(j)]);
+					tmpSet.and(aicEndBuddies);
 					tmpSet.and(finder.getCandidates()[startCandidate]);
 					if (!tmpSet.isEmpty()) {
 						checkAic(tables[i], j);
 					}
 				} else {
-					if (!buddies.contains(tables[i].getCellIndex(j))) {
+					if (!aicEndBuddies.contains(startIndex)) {
 						// cant be Type 2
 						continue;
 					}
-					if (sudoku.isCandidate(tables[i].getCellIndex(j), startCandidate)
+					if ((!groupEnd && sudoku.isCandidate(tables[i].getCellIndex(j), startCandidate))
 							|| sudoku.isCandidate(startIndex, tables[i].getCandidate(j))) {
 						// Type 2
 						checkAic(tables[i], j);
@@ -1423,6 +1430,33 @@ public class TablingSolver extends AbstractSolver {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Collects the cells of the AIC end node <code>entry[entryIndex]</code> (one
+	 * cell, or the two or three cells of a group node) in {@link #aicEndCells}
+	 * and the cells that see all of them in {@link #aicEndBuddies}.
+	 *
+	 * @return <code>false</code> if the end node contains <code>startIndex</code>
+	 */
+	private boolean getAicEndCells(TableEntry entry, int entryIndex, int startIndex) {
+		int e = entry.getEntry(entryIndex);
+		aicEndCells.clear();
+		aicEndCells.add(Chain.getSCellIndex(e));
+		if (Chain.getSNodeType(e) == Chain.GROUP_NODE) {
+			aicEndCells.add(Chain.getSCellIndex2(e));
+			if (Chain.getSCellIndex3(e) != -1) {
+				aicEndCells.add(Chain.getSCellIndex3(e));
+			}
+		}
+		if (aicEndCells.contains(startIndex)) {
+			return false;
+		}
+		aicEndBuddies.setAll();
+		for (int k = 0; k < aicEndCells.size(); k++) {
+			aicEndBuddies.and(Sudoku2.buddies[aicEndCells.get(k)]);
+		}
+		return true;
 	}
 
 	/**
@@ -1751,10 +1785,15 @@ public class TablingSolver extends AbstractSolver {
 		int endCandidate = entry.getCandidate(entryIndex);
 		int startIndex = entry.getCellIndex(0);
 		int endIndex = entry.getCellIndex(entryIndex);
+		boolean groupEnd = entry.getNodeType(entryIndex) == Chain.GROUP_NODE;
+		if (!getAicEndCells(entry, entryIndex, startIndex)) {
+			return;
+		}
 		if (startCandidate == endCandidate) {
 			// type 1 AIC: delete all candidates that can see both ends of the chain
+			// (with a group node at the end: all cells of the group node)
 			tmpSet.set(Sudoku2.buddies[startIndex]);
-			tmpSet.and(Sudoku2.buddies[endIndex]);
+			tmpSet.and(aicEndBuddies);
 			tmpSet.and(finder.getCandidates()[startCandidate]);
 			if (!tmpSet.isEmpty()) {
 				for (int i = 0; i < tmpSet.size(); i++) {
@@ -1764,11 +1803,13 @@ public class TablingSolver extends AbstractSolver {
 				}
 			}
 		} else {
-			// Type 2 AIC: Delete start candidate in end cell and vice versa
-			if (sudoku.isCandidate(startIndex, endCandidate)) {
+			// Type 2 AIC: Delete start candidate in end cell and vice versa; with a
+			// group node at the end only the end candidate in the start cell, and only
+			// if the start cell sees all cells of the group node
+			if (aicEndBuddies.contains(startIndex) && sudoku.isCandidate(startIndex, endCandidate)) {
 				globalStep.addCandidateToDelete(startIndex, endCandidate);
 			}
-			if (sudoku.isCandidate(endIndex, startCandidate)) {
+			if (!groupEnd && sudoku.isCandidate(endIndex, startCandidate)) {
 				globalStep.addCandidateToDelete(endIndex, startCandidate);
 			}
 		}
@@ -1778,8 +1819,7 @@ public class TablingSolver extends AbstractSolver {
 		}
 		// build the chain
 		resetTmpChains();
-		addChain(entry, entry.getCellIndex(entryIndex), entry.getCandidate(entryIndex), entry.isStrong(entryIndex),
-				false, true);
+		addAicChain(entry, entryIndex);
 		if (globalStep.getChains().isEmpty()) {
 			// something is wrong with that chain
 			return;
@@ -2790,12 +2830,27 @@ public class TablingSolver extends AbstractSolver {
 	 *                   Links to the start cell are invalid too for AICs.
 	 */
 	private void addChain(TableEntry entry, int cellIndex, int cand, boolean set, boolean isNiceLoop, boolean isAic) {
-//        if (cellIndex != 79 || cand != 6 || entry.getCellIndex(0) != 73 || entry.getCandidate(0) != 1) {
-//            return;
-//        }
 		// construct the new chain
 		buildChain(entry, cellIndex, cand, set);
+		addBuiltChain(isNiceLoop, isAic);
+	}
 
+	/**
+	 * Like {@link #addChain(TableEntry, int, int, boolean, boolean, boolean)} for
+	 * an AIC, but the end of the chain is given as an index into
+	 * <code>entry</code>. Needed when the chain ends on a group node, which cannot
+	 * be looked up by cell and candidate (issue #44).
+	 */
+	private void addAicChain(TableEntry entry, int entryIndex) {
+		buildChainFromIndex(entry, entryIndex);
+		addBuiltChain(false, true);
+	}
+
+	/**
+	 * Checks the chain built by {@link #buildChain(TableEntry, int, int, boolean)}
+	 * and adds it to the step if possible.
+	 */
+	private void addBuiltChain(boolean isNiceLoop, boolean isAic) {
 		// now check it and add it to the step if plssible
 		int j = 0;
 		if (isNiceLoop || isAic) {
@@ -2905,6 +2960,15 @@ public class TablingSolver extends AbstractSolver {
 					new Object[] { cellIndex, SolutionStep.getCellPrint(cellIndex), cand, set });
 			return;
 		}
+		buildChainFromIndex(entry, index);
+	}
+
+	/**
+	 * Constructs the chain for the implication stored at <code>index</code> in
+	 * <code>entry</code> (see {@link #buildChain(TableEntry, int, int, boolean)}).
+	 */
+	private void buildChainFromIndex(TableEntry entry, int index) {
+		chainIndex = 0;
 		// reset the data structures for multiples inferences (nets)
 		actMin = 0;
 		for (int i = 0; i < minIndexes.length; i++) {
