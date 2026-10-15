@@ -1039,6 +1039,7 @@ public class TablingSolver extends AbstractSolver {
 		if (Options.getInstance().isOnlyOneChainPerStep()) {
 			if (globalStep.getCandidatesToDelete().size() > 0) {
 				// candidates can be deleted
+				globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 				del = globalStep.getCandidateString();
 			} else {
 				// cells can be set
@@ -1710,6 +1711,7 @@ public class TablingSolver extends AbstractSolver {
 				return;
 			}
 			// only one Nice Loop per set of eliminations
+			globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 			String del = globalStep.getCandidateString();
 			Integer oldIndex = deletesMap.get(del);
 			if (oldIndex != null && steps.get(oldIndex.intValue()).getChainLength() <= nlChainLength) {
@@ -1805,6 +1807,7 @@ public class TablingSolver extends AbstractSolver {
 			return;
 		}
 		// check for steps with the same eliminations
+		globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 		String del = globalStep.getCandidateString();
 		Integer oldIndex = deletesMap.get(del);
 		if (oldIndex != null

@@ -389,12 +389,13 @@ public class SolutionStep implements Comparable<SolutionStep>, Cloneable {
 	}
 
 	public String getCandidateString(boolean library, boolean statistics) {
-		Collections.sort(candidatesToDelete);
-		eliminateDoubleCandidatesToDelete();
+		// work on a sorted copy without duplicates: building a string must not change
+		// the step (issue #36)
+		List<Candidate> sortedCandidates = getSortedCandidatesToDelete();
 		StringBuilder candBuff = new StringBuilder();
 		int lastCand = -1;
 		StringBuffer delPos = new StringBuffer();
-		for (Candidate cand : candidatesToDelete) {
+		for (Candidate cand : sortedCandidates) {
 			if (cand.getValue() != lastCand) {
 				if (lastCand != -1) {
 					candBuff.append("/");
@@ -433,15 +434,24 @@ public class SolutionStep implements Comparable<SolutionStep>, Cloneable {
 		}
 	}
 
-	private void eliminateDoubleCandidatesToDelete() {
-		Set<Candidate> candSet = new TreeSet<Candidate>();
-		for (int i = 0; i < candidatesToDelete.size(); i++) {
-			candSet.add(candidatesToDelete.get(i));
-		}
+	/**
+	 * Sorts {@link #candidatesToDelete} (by digit, then cell) and removes
+	 * duplicates, in place. The order matters when the step is applied: it decides
+	 * which single the solver finds next. Solvers that used to get this as a side
+	 * effect of {@link #getCandidateString()} call it explicitly (issue #36).
+	 */
+	public void sortCandidatesToDelete() {
+		List<Candidate> sorted = getSortedCandidatesToDelete();
 		candidatesToDelete.clear();
-		for (Candidate cand : candSet) {
-			candidatesToDelete.add(cand);
-		}
+		candidatesToDelete.addAll(sorted);
+	}
+
+	/**
+	 * @return a sorted copy of {@link #candidatesToDelete} without duplicates; the
+	 *         step itself is not changed
+	 */
+	private ArrayList<Candidate> getSortedCandidatesToDelete() {
+		return new ArrayList<Candidate>(new TreeSet<Candidate>(candidatesToDelete));
 	}
 
 	public static String getCellPrint(int index) {
@@ -1632,8 +1642,8 @@ public class SolutionStep implements Comparable<SolutionStep>, Cloneable {
 
 	private void getCandidatesToDelete(StringBuffer tmp) {
 		tmp.append(" => ");
-		@SuppressWarnings("unchecked")
-		ArrayList<Candidate> tmpList = (ArrayList<Candidate>) ((ArrayList<Candidate>) candidatesToDelete).clone();
+		// sorted copy: the text must not depend on the order of the list (issue #36)
+		ArrayList<Candidate> tmpList = getSortedCandidatesToDelete();
 		boolean first = true;
 		ArrayList<Integer> candList = new ArrayList<Integer>();
 		while (tmpList.size() > 0) {

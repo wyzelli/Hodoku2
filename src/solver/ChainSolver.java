@@ -672,6 +672,7 @@ public class ChainSolver extends AbstractSolver {
 		// check if the chain has already been found
 		// dont do the check for Turbot fishes
 		if (isTurbot == false) {
+			globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 			String del = globalStep.getCandidateString();
 			Integer oldLength = deletesMap.get(del);
 			if (oldLength != null && oldLength.intValue() <= stackLevel) {
@@ -714,6 +715,7 @@ public class ChainSolver extends AbstractSolver {
 		}
 
 		// check if the chain has already been found
+		globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 		String del = globalStep.getCandidateString();
 		Integer oldLength = deletesMap.get(del);
 		if (oldLength != null && oldLength.intValue() <= stackLevel) {
@@ -789,6 +791,7 @@ public class ChainSolver extends AbstractSolver {
 		}
 
 		// check if the chain has already been found
+		globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 		String del = globalStep.getCandidateString();
 		Integer oldLength = deletesMap.get(del);
 		if (oldLength != null && oldLength.intValue() <= stackLevel) {
@@ -930,6 +933,7 @@ public class ChainSolver extends AbstractSolver {
 		if (globalStep.getCandidatesToDelete().size() > 0) {
 			// ok, Loop ist nicht redundant -> einschreiben, wenn es die Kombination nicht
 			// schon gibt
+			globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 			String del = globalStep.getCandidateString();
 			Integer oldLength = deletesMap.get(del);
 			if (oldLength != null && oldLength.intValue() <= chainIndex) {
