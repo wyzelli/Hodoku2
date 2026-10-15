@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import generator.SudokuGeneratorFactory;
 import solver.SudokuSolverFactory;
 import solver.SudokuStepFinder;
 
@@ -656,10 +657,24 @@ public class RegressionTester {
 		boolean found = false;
 		boolean exactMatch = false;
 		boolean good = true; // always be optimistic...
+		// Nice Loops and AICs: other valid chains for the same digit are not a fail
+		// case, as long as the expected chain is found as well (see below)
+		boolean lenient = isLenientChainType(start);
+		List<SolutionStep> otherSteps = new ArrayList<SolutionStep>();
+		List<String> otherResults = new ArrayList<String>();
 		for (SolutionStep step : steps) {
 			String result = sudoku.getSudoku(ClipboardMode.LIBRARY, step);
 			if (result.startsWith(start)) {
 				found = true;
+				if (lenient) {
+					if (result.equals(testCase)) {
+						exactMatch = true;
+					} else {
+						otherSteps.add(step);
+						otherResults.add(result);
+					}
+					continue;
+				}
 				// should match case!
 				// careful: for chains one exact match has to be found,
 				// but if a match already exists, a deviation in chain
@@ -681,6 +696,24 @@ public class RegressionTester {
 				}
 			}
 		}
+		if (lenient && !otherSteps.isEmpty()) {
+			int[] solution = exactMatch ? getUniqueSolution(sudoku) : null;
+			int index1 = testCase.lastIndexOf(':');
+			for (int i = 0; i < otherSteps.size(); i++) {
+				String result = otherResults.get(i);
+				int index2 = result.lastIndexOf(':');
+				if (exactMatch && testCase.substring(0, index1).equals(result.substring(0, index2))) {
+					// only the chain length differs
+					continue;
+				}
+				if (solution != null && eliminationsAreValid(otherSteps.get(i), solution)) {
+					// another valid chain for the same digit
+					continue;
+				}
+				good = false;
+				failedCases.put(testCase, result);
+			}
+		}
 		if (failCase) {
 			if (found) {
 				anzBadCases++;
@@ -698,6 +731,52 @@ public class RegressionTester {
 				anzGoodCases++;
 			}
 		}
+	}
+
+	/**
+	 * Nice Loops and AICs: a position usually contains several valid chains for
+	 * the same digit, and the library stores only one of them. For these types an
+	 * extra step is accepted if the expected step was found as well and all its
+	 * eliminations agree with the solution of the position.
+	 */
+	private static boolean isLenientChainType(String start) {
+		String[] parts = start.split(":");
+		if (parts.length < 2) {
+			return false;
+		}
+		SolutionType type = SolutionType.getTypeFromLibraryType(parts[1]);
+		return type == SolutionType.AIC || type == SolutionType.GROUPED_AIC
+				|| type == SolutionType.DISCONTINUOUS_NICE_LOOP
+				|| type == SolutionType.GROUPED_DISCONTINUOUS_NICE_LOOP
+				|| type == SolutionType.CONTINUOUS_NICE_LOOP || type == SolutionType.GROUPED_CONTINUOUS_NICE_LOOP;
+	}
+
+	/**
+	 * @return the solution of the position, or <code>null</code> if it is not
+	 *         unique
+	 */
+	private static int[] getUniqueSolution(Sudoku2 sudoku) {
+		Sudoku2 tmp = sudoku.clone();
+		if (!SudokuGeneratorFactory.getDefaultGeneratorInstance().validSolution(tmp)) {
+			return null;
+		}
+		return tmp.getSolution();
+	}
+
+	/**
+	 * @return <code>true</code> if the step eliminates something and no
+	 *         elimination removes the solution value of its cell
+	 */
+	private static boolean eliminationsAreValid(SolutionStep step, int[] solution) {
+		if (step.getCandidatesToDelete().isEmpty()) {
+			return false;
+		}
+		for (Candidate cand : step.getCandidatesToDelete()) {
+			if (solution[cand.getIndex()] == cand.getValue()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private void addIgnoredTechnique(String technique) {
