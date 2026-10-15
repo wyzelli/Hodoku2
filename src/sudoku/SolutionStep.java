@@ -568,12 +568,36 @@ public class SolutionStep implements Comparable<SolutionStep>, Cloneable {
 		indices.add(index);
 	}
 
+	/**
+	 * Adds a candidate to delete, unless it is already in the list. Some techniques
+	 * find the same elimination through more than one rule (doubly linked ALS-XZ,
+	 * Sue de Coq); listing it twice would inflate the elimination count used for
+	 * sorting (see issue #34).
+	 */
 	public void addCandidateToDelete(Candidate cand) {
-		candidatesToDelete.add(cand);
+		if (!containsCandidateToDelete(cand.getIndex(), cand.getValue())) {
+			candidatesToDelete.add(cand);
+		}
 	}
 
+	/**
+	 * Adds a candidate to delete, unless it is already in the list (see
+	 * {@link #addCandidateToDelete(Candidate)}).
+	 */
 	public void addCandidateToDelete(int index, int candidate) {
-		candidatesToDelete.add(new Candidate(index, candidate));
+		if (!containsCandidateToDelete(index, candidate)) {
+			candidatesToDelete.add(new Candidate(index, candidate));
+		}
+	}
+
+	private boolean containsCandidateToDelete(int index, int candidate) {
+		for (int i = 0; i < candidatesToDelete.size(); i++) {
+			Candidate c = candidatesToDelete.get(i);
+			if (c.getIndex() == index && c.getValue() == candidate) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void addCannibalistic(Candidate cand) {
