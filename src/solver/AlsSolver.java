@@ -43,7 +43,7 @@ public class AlsSolver extends AbstractSolver {
 	private static final boolean DEBUG = false;
 	/** Enable additional timing */
 	private static final boolean TIMING = false;
-	/** Maximum number of RCs in an ALS-Chain (forward search only!) */
+	/** Maximum number of RCs in an ALS-Chain when solving (not for "find all steps"). */
 	private static final int MAX_RC = 50;
 	/** A list holding all ALS present in the curent state of the gid. */
 	private List<Als> alses = new ArrayList<Als>(500);
@@ -161,6 +161,8 @@ public class AlsSolver extends AbstractSolver {
 			result = getAlsXYWing(true);
 			break;
 		case ALS_XY_CHAIN:
+			// chain search needs RCs in both directions (see #23)
+			finder.setRcOnlyForward(false);
 			if (chain.length != MAX_RC) {
 				chain = new RestrictedCommon[MAX_RC];
 			}
@@ -231,6 +233,11 @@ public class AlsSolver extends AbstractSolver {
 		}
 		if (doChain) {
 			steps.clear();
+			if (finder.isRcOnlyForward()) {
+				// chain search needs RCs in both directions (see #23)
+				finder.setRcOnlyForward(false);
+				collectAllRestrictedCommons(Options.getInstance().isAllowAlsOverlap());
+			}
 			getAlsXYChainInt();
 			Collections.sort(steps, alsComparator);
 			resultSteps.addAll(steps);
@@ -539,195 +546,276 @@ public class AlsSolver extends AbstractSolver {
 	 * 
 	 * If a new ALS is already contained within the chain, the chain becomes a whip
 	 * (not handled)<br>
-	 * Its unclear whether the search has to go in both directions (currently only
-	 * one direction is done since RCs are collected only in one direction).
+	 * <br>
+	 * The search runs in both directions over all RCs (they must be collected with
+	 * <code>rcOnlyForward == false</code>) as a breadth-first search over chain
+	 * states, see {@link #searchAlsChainStates(int, int)}. The old depth-first
+	 * search over all paths was exponential when run in both directions and missed
+	 * chains when run forward only (issue #23).
 	 */
 	private void getAlsXYChainInt() {
 		recDepth = 0;
 		maxRecDepth = 0;
 		deletesMap.clear();
-//        System.out.println("ALS (" + alses.size() + "):");
-//        for (Als als : alses) {
-//            System.out.println("   " + als);
-//        }
-		for (int i = 0; i < alses.size(); i++) {
-//            if (i != 8) {
-//                continue;
-//            }
+		int alsCount = alses.size();
+		int stateSpace = alsCount * STATE_STRIDE;
+		if (stateStamp == null || stateStamp.length < stateSpace) {
+			stateStamp = new int[stateSpace];
+			stampGeneration = 0;
+		}
+		for (int i = 0; i < alsCount; i++) {
 			startAls = alses.get(i);
-			chainIndex = 0;
-			if (alsInChain == null || alsInChain.length < alses.size()) {
-				alsInChain = new boolean[alses.size()];
-			} else {
-				Arrays.fill(alsInChain, false);
+			// collect the possible first actual RCs: every candidate of every RC leaving
+			// the start ALS can be chosen freely
+			short firstDigits = 0;
+			for (int k = startIndices[i]; k < endIndices[i]; k++) {
+				RestrictedCommon rc = restrictedCommons.get(k);
+				firstDigits |= Sudoku2.MASKS[rc.getCand1()];
+				if (rc.getCand2() != 0) {
+					firstDigits |= Sudoku2.MASKS[rc.getCand2()];
+				}
 			}
-			alsInChain[i] = true;
-			firstRC = null;
-			if (DEBUG) {
-				System.out.println("============== Start search: " + i + " " + startAls);
-			}
-			getAlsXYChainRecursive(i, null);
-			if (DEBUG) {
-				System.out.println("               End search: " + alses.get(i));
+			int[] digits = Sudoku2.POSSIBLE_VALUES[firstDigits];
+			for (int d = 0; d < digits.length; d++) {
+				searchAlsChainStates(i, digits[d]);
 			}
 		}
 		if (DEBUG) {
-			System.out.println(steps.size() + " (maxRecDepth: " + maxRecDepth + ")");
+			System.out.println(steps.size() + " (max chain length: " + maxRecDepth + ")");
+		}
+	}
+
+	/** Number of state slots per ALS: 3 depth buckets x 1024 digit masks. */
+	private static final int STATE_STRIDE = 3 * 1024;
+	/** Generation stamps for the state table (avoids clearing it for every search). */
+	private int[] stateStamp = null;
+	/** Current generation for {@link #stateStamp}. */
+	private int stampGeneration = 0;
+	/** ALS index of every state in the breadth-first chain search. */
+	private int[] stAls = new int[1024];
+	/** Digits excluded from the ALS by the incoming link (bit mask, bit = digit). */
+	private int[] stIn = new int[1024];
+	/** Number of links from the start ALS to the state. */
+	private int[] stDepth = new int[1024];
+	/** Parent state (-1 for the first link). */
+	private int[] stParent = new int[1024];
+	/** Index of the incoming RC in {@link #restrictedCommons}. */
+	private int[] stRc = new int[1024];
+	/** Actual RC of the incoming link (1: cand1, 2: cand2, 3: both). */
+	private int[] stActual = new int[1024];
+
+	/**
+	 * Breadth-first search over ALS chain states for one start ALS and one first
+	 * actual RC.<br>
+	 * <br>
+	 * Whether a chain allows eliminations depends only on the start ALS, the actual
+	 * RC leaving it, the current (end) ALS and the actual RC(s) entering the end
+	 * ALS, not on the ALS in between. A state is therefore (ALS, digits excluded
+	 * from that ALS by the incoming link). Every state is expanded once per depth
+	 * bucket (1, 2 and 3+ links, so that a state first reached as an ALS-XZ or
+	 * ALS-XY-Wing can still be checked as a chain), and the shortest chain to it is
+	 * kept.<br>
+	 * <br>
+	 * This replaces the old depth-first search over all paths, which was
+	 * exponential without the "forward only" restriction and incomplete with it
+	 * (issue #23): forward only found a chain only if the list indices of its ALS
+	 * were monotonic.<br>
+	 * <br>
+	 * Adjacency rule: the actual RCs of a link are the RC candidates that were not
+	 * excluded by the previous link. Chains that would revisit an ALS (including
+	 * returning to the start ALS) are not reported.
+	 *
+	 * @param startIndex index of the start ALS
+	 * @param firstDigit actual RC of the first link
+	 */
+	private void searchAlsChainStates(int startIndex, int firstDigit) {
+		int maxLinks = chain.length;
+		stampGeneration++;
+		if (stampGeneration == Integer.MAX_VALUE) {
+			Arrays.fill(stateStamp, 0);
+			stampGeneration = 1;
+		}
+		int count = 0;
+		// initial states: all RCs leaving the start ALS that contain firstDigit
+		for (int k = startIndices[startIndex]; k < endIndices[startIndex]; k++) {
+			RestrictedCommon rc = restrictedCommons.get(k);
+			int actual;
+			if (rc.getCand1() == firstDigit) {
+				actual = 1;
+			} else if (rc.getCand2() == firstDigit) {
+				actual = 2;
+			} else {
+				continue;
+			}
+			int next = rc.getAls2();
+			if (next == startIndex) {
+				continue;
+			}
+			count = addChainState(count, next, 1 << firstDigit, 1, -1, k, actual);
+		}
+		for (int s = 0; s < count; s++) {
+			int als = stAls[s];
+			int in = stIn[s];
+			int depth = stDepth[s];
+			if (depth > maxRecDepth) {
+				maxRecDepth = depth;
+			}
+			if (depth >= 3) {
+				checkAlsChainState(startIndex, firstDigit, s);
+			}
+			if (depth >= maxLinks) {
+				continue;
+			}
+			for (int k = startIndices[als]; k < endIndices[als]; k++) {
+				RestrictedCommon rc = restrictedCommons.get(k);
+				int next = rc.getAls2();
+				if (next == startIndex) {
+					continue;
+				}
+				int out = 0;
+				int actual = 0;
+				if ((in & (1 << rc.getCand1())) == 0) {
+					out |= 1 << rc.getCand1();
+					actual |= 1;
+				}
+				if (rc.getCand2() != 0 && (in & (1 << rc.getCand2())) == 0) {
+					out |= 1 << rc.getCand2();
+					actual |= 2;
+				}
+				if (actual == 0) {
+					// adjacency rule violated
+					continue;
+				}
+				count = addChainState(count, next, out, depth + 1, s, k, actual);
+			}
 		}
 	}
 
 	/**
-	 * Real search: for als with index alsIndex check all RCs. If the RC fulfills
-	 * the adjacency rules and the als to which the RC points is not already part of
-	 * the chain, the als is added and the search is continued recursively. When the
-	 * chain size reaches 4, every step is tested for possible eliminations.<br>
-	 * <br>
-	 * 
-	 * Caution: If the first RC has two candidates, both of them have to be tried
-	 * independently.
-	 * 
-	 * @param alsIndex index of the last added ALS
-	 * @param lastRC   RC of the last step (needed for adjacency check)
+	 * Adds a new state to the breadth-first queue, if it has not been seen yet.
+	 *
+	 * @return the new number of states
 	 */
-	private void getAlsXYChainRecursive(int alsIndex, RestrictedCommon lastRC) {
-		// check for end of recursion
-		// wrong condition: the chain ends, when it becomes too long!
-//        if (alsIndex >= alses.size()) {
-//            // nothing left to do
-//            return;
-//        }
-		if (chainIndex >= chain.length) {
-			// no space left -> stop it!
+	private int addChainState(int count, int als, int in, int depth, int parent, int rcIndex, int actual) {
+		int bucket = depth >= 3 ? 2 : depth - 1;
+		int key = als * STATE_STRIDE + bucket * 1024 + in;
+		if (stateStamp[key] == stampGeneration) {
+			return count;
+		}
+		stateStamp[key] = stampGeneration;
+		if (count == stAls.length) {
+			int newLength = stAls.length * 2;
+			stAls = Arrays.copyOf(stAls, newLength);
+			stIn = Arrays.copyOf(stIn, newLength);
+			stDepth = Arrays.copyOf(stDepth, newLength);
+			stParent = Arrays.copyOf(stParent, newLength);
+			stRc = Arrays.copyOf(stRc, newLength);
+			stActual = Arrays.copyOf(stActual, newLength);
+		}
+		stAls[count] = als;
+		stIn[count] = in;
+		stDepth[count] = depth;
+		stParent[count] = parent;
+		stRc[count] = rcIndex;
+		stActual[count] = actual;
+		return count + 1;
+	}
+
+	/**
+	 * Checks a chain state (at least 4 ALS) for eliminations; if there are any, the
+	 * chain is rebuilt from the parent pointers and written as step.
+	 *
+	 * @param startIndex index of the start ALS
+	 * @param firstDigit actual RC of the first link
+	 * @param state      index of the state to check
+	 */
+	private void checkAlsChainState(int startIndex, int firstDigit, int state) {
+		Als endAls = alses.get(stAls[state]);
+		RestrictedCommon lastRc = restrictedCommons.get(stRc[state]);
+		int c3 = 0, c4 = 0;
+		int lastActual = stActual[state];
+		if (lastActual == 1) {
+			c3 = lastRc.getCand1();
+		} else if (lastActual == 2) {
+			c3 = lastRc.getCand2();
+		} else {
+			c3 = lastRc.getCand1();
+			c4 = lastRc.getCand2();
+		}
+		globalStep.reset();
+		checkCandidatesToDelete(startAls, endAls, firstDigit, 0, c3, c4, null);
+		if (globalStep.getCandidatesToDelete().isEmpty()) {
 			return;
 		}
-		recDepth++;
-		if (recDepth > maxRecDepth) {
-			maxRecDepth = recDepth;
+		// rebuild the chain (from the end to the start)
+		int links = stDepth[state];
+		if (alsInChain == null || alsInChain.length < alses.size()) {
+			alsInChain = new boolean[alses.size()];
+		} else {
+			Arrays.fill(alsInChain, false);
 		}
-		if (recDepth % 100 == 0) {
-			if (DEBUG) {
-//                System.out.println("Recursion depth: " + recDepth);
+		alsInChain[startIndex] = true;
+		for (int s = state, j = links - 1; s >= 0; s = stParent[s], j--) {
+			if (alsInChain[stAls[s]]) {
+				// the shortest walk to this state visits an ALS twice -> not a chain
+				globalStep.reset();
+				return;
 			}
+			alsInChain[stAls[s]] = true;
+			RestrictedCommon rc = restrictedCommons.get(stRc[s]);
+			chain[j] = new RestrictedCommon(rc.getAls1(), rc.getAls2(), rc.getCand1(), rc.getCand2(), stActual[s]);
 		}
-		// check all RCs; if none exist the loop is never entered
-		boolean firstTry = true;
-		for (int i = startIndices[alsIndex]; i < endIndices[alsIndex]; i++) {
-			RestrictedCommon rc = restrictedCommons.get(i);
-			if (chainIndex >= chain.length || !rc.checkRC(lastRC, firstTry)) {
-				// chain is full or RC doesnt adhere to the adjacency rules
-				continue;
+		chainIndex = links;
+		firstRC = chain[0];
+		// chain found: build it and write it (eliminations are already in globalStep)
+		globalStep.setType(SolutionType.ALS_XY_CHAIN);
+		globalStep.addAls(startAls.indices, startAls.candidates);
+		Als tmpAls = startAls;
+		for (int j = 0; j < links; j++) {
+			Als tmp = alses.get(chain[j].getAls2());
+			globalStep.addAls(tmp.indices, tmp.candidates);
+			globalStep.addRestrictedCommon((RestrictedCommon) chain[j].clone());
+			if (chain[j].getActualRC() == 1 || chain[j].getActualRC() == 3) {
+				addRestrictedCommonToStep(tmpAls, tmp, chain[j].getCand1(), true);
 			}
-			if (alsInChain[rc.getAls2()]) {
-				// ALS already part of the chain -> whips are not handled!
-				continue;
+			if (chain[j].getActualRC() == 2 || chain[j].getActualRC() == 3) {
+				addRestrictedCommonToStep(tmpAls, tmp, chain[j].getCand2(), true);
 			}
-			Als aktAls = alses.get(rc.getAls2());
+			tmpAls = tmp;
+		}
 
-			// ok, ALS can be added
-			if (chainIndex == 0) {
-				firstRC = rc;
-			}
-			chain[chainIndex++] = rc;
-			alsInChain[rc.getAls2()] = true;
-			if (DEBUG) {
-//                showActAlsChain(recDepth);
-			}
-			// if the chain length has reached at least 4 RCs check for candidates to
-			// eliminate
-			if (chainIndex >= 3) {
-				globalStep.getCandidatesToDelete().clear();
-				int c1 = 0, c2 = 0, c3 = 0, c4 = 0;
-				c1 = firstRC.getCand1();
-				c2 = firstRC.getCand2();
-				if (firstRC.getActualRC() == 1) {
-					c2 = 0;
-				} else if (firstRC.getActualRC() == 2) {
-					c1 = 0;
-				}
-				if (rc.getActualRC() == 1) {
-					c3 = rc.getCand1();
-				} else if (rc.getActualRC() == 2) {
-					c3 = rc.getCand2();
-				} else if (rc.getActualRC() == 3) {
-					c3 = rc.getCand1();
-					c4 = rc.getCand2();
-				}
-				checkCandidatesToDelete(startAls, aktAls, c1, c2, c3, c4, null);
-				if (globalStep.getCandidatesToDelete().size() > 0) {
-					// chain found: build it and write it
-					globalStep.setType(SolutionType.ALS_XY_CHAIN);
-					globalStep.addAls(startAls.indices, startAls.candidates);
-					Als tmpAls = startAls;
-					for (int j = 0; j < chainIndex; j++) {
-						Als tmp = alses.get(chain[j].getAls2());
-						globalStep.addAls(tmp.indices, tmp.candidates);
-						globalStep.addRestrictedCommon((RestrictedCommon) chain[j].clone());
-
-						// write all RCs for this chain (nothing has been done yet)
-						// if (DEBUG) System.out.println("chain[" + j + "]: " + chain[j] + " (" + tmpAls
-						// + "/" + tmp + ")");
-						if (chain[j].getActualRC() == 1 || chain[j].getActualRC() == 3) {
-							addRestrictedCommonToStep(tmpAls, tmp, chain[j].getCand1(), true);
-						}
-						if (chain[j].getActualRC() == 2 || chain[j].getActualRC() == 3) {
-							addRestrictedCommonToStep(tmpAls, tmp, chain[j].getCand2(), true);
-						}
-						tmpAls = tmp;
-					}
-
-					// check if we already have a chain for the given set of eliminations.
-					// if we do, the new chain is only written, if it is shorter than the old one.
-					boolean writeIt = true;
-					int replaceIndex = -1;
-					String elim = null;
-					if (Options.getInstance().isOnlyOneAlsPerStep()) {
-						globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
-						elim = globalStep.getCandidateString();
-						Integer alreadyThere = deletesMap.get(elim);
-						if (alreadyThere != null) {
-							// a step already exists!
-							SolutionStep tmp = steps.get(alreadyThere);
-							if (tmp.getAlsesIndexCount() > globalStep.getAlsesIndexCount()) {
-								writeIt = true;
-								replaceIndex = alreadyThere;
-							} else {
-								writeIt = false;
-							}
-						}
-					}
-					if (writeIt) {
-						if (replaceIndex != -1) {
-							steps.remove(replaceIndex);
-							steps.add(replaceIndex, (SolutionStep) globalStep.clone());
-						} else {
-							steps.add((SolutionStep) globalStep.clone());
-							if (elim != null) {
-								deletesMap.put(elim, steps.size() - 1);
-							}
-						}
-					}
-					globalStep.reset();
-				}
-			}
-
-			// and to the next level...
-			getAlsXYChainRecursive(rc.getAls2(), rc);
-
-			// and back one level
-			alsInChain[rc.getAls2()] = false;
-			chainIndex--;
-
-			if (lastRC == null) {
-				if (rc.getCand2() != 0 && firstTry) {
-					// first RC in chain and a second RC is present: try it!
-					firstTry = false;
-					i--;
+		// check if we already have a chain for the given set of eliminations.
+		// if we do, the new chain is only written, if it is shorter than the old one.
+		boolean writeIt = true;
+		int replaceIndex = -1;
+		String elim = null;
+		if (Options.getInstance().isOnlyOneAlsPerStep()) {
+			globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
+			elim = globalStep.getCandidateString();
+			Integer alreadyThere = deletesMap.get(elim);
+			if (alreadyThere != null) {
+				// a step already exists!
+				SolutionStep tmp = steps.get(alreadyThere);
+				if (tmp.getAlsesIndexCount() > globalStep.getAlsesIndexCount()) {
+					writeIt = true;
+					replaceIndex = alreadyThere;
 				} else {
-					firstTry = true;
+					writeIt = false;
 				}
 			}
 		}
-		recDepth--;
+		if (writeIt) {
+			if (replaceIndex != -1) {
+				steps.remove(replaceIndex);
+				steps.add(replaceIndex, (SolutionStep) globalStep.clone());
+			} else {
+				steps.add((SolutionStep) globalStep.clone());
+				if (elim != null) {
+					deletesMap.put(elim, steps.size() - 1);
+				}
+			}
+		}
+		globalStep.reset();
 	}
 
 	/**
