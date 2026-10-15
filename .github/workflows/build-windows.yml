@@ -48,12 +48,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # build.gradle pins the Java toolchain to JavaLanguageVersion.of(21),
       # so the CI JDK must be 21 to match the source/target compatibility.
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -181,7 +181,7 @@ jobs:
           Get-Item HoDoKu-store.msix, HoDoKu-msix-layout.zip | Format-List Name, Length
 
       - name: Upload Microsoft Store package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hodoku-store-msix
           path: |
@@ -192,7 +192,7 @@ jobs:
       - name: Upload unsigned zip as artifact for signing
         if: ${{ env.SIGNPATH_API_TOKEN != '' }}
         id: unsigned-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Hodoku-windows-unsigned
           path: Hodoku-windows.zip
@@ -218,7 +218,7 @@ jobs:
       # Always publish downloadable build artifacts from the Actions run itself,
       # so the zip/jar are retrievable even without a release (or before signing).
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: hodoku-windows-build
           path: |
@@ -232,7 +232,7 @@ jobs:
       # asset-upload step that has repeatedly failed from restricted environments.
       - name: Attach assets to GitHub Release
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: Hodoku ${{ github.ref_name }}
