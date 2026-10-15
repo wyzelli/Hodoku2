@@ -40,8 +40,6 @@ public class GroupNode {
 	public int index2; // index of second cell
 	public int index3; // index of third cell or -1, if grouped node consists only of two cells
 
-	private static SudokuSet candInHouse = new SudokuSet(); // all positions for a given candidate in a given house
-	private static SudokuSet tmpSet = new SudokuSet(); // for check with blocks
 
 	/**
 	 * Creates a new instance of GroupNode
@@ -100,6 +98,11 @@ public class GroupNode {
 
 	private static void getGroupNodesForHouseType(List<GroupNode> groupNodes, SudokuStepFinder finder,
 			SudokuSet[] houses) {
+		// local scratch sets: these used to be static and shared by every solver
+		// instance, so the progress checker, the background generator and the main
+		// solver could corrupt each other's group nodes (issue #38)
+		SudokuSet candInHouse = new SudokuSet(); // all positions for a given candidate in a given house
+		SudokuSet tmpSet = new SudokuSet(); // for check with blocks
 		for (int i = 0; i < houses.length; i++) {
 			for (int cand = 1; cand <= 9; cand++) {
 				candInHouse.set(houses[i]);
