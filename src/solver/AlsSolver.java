@@ -1408,65 +1408,74 @@ public class AlsSolver extends AbstractSolver {
  * @author hobiwan
  */
 class AlsComparator implements Comparator<SolutionStep> {
-	private static final boolean debug = false;
 
 	/**
 	 * Sort order:<br>
 	 * <ul>
-	 * <li>number of eliminations</li>
-	 * <li>equivalency: same candidates to be deleted</li>
-	 * <li>sum of indices in the step</li>
-	 * <li>number of ALS (XY lt XY-Wing)</li>
+	 * <li>number of eliminations (descending)</li>
+	 * <li>the eliminations themselves, sorted by cell index and digit and compared
+	 * lexicographically (steps with the same eliminations stay together)</li>
+	 * <li>number of ALS (XZ lt XY-Wing)</li>
 	 * <li>number of indices in all ALS</li>
+	 * <li>type</li>
 	 * </ul>
+	 * Every criterion is a plain key comparison, so the order is transitive as
+	 * required by {@link Comparator}. The old version compared non-equivalent steps
+	 * by a weighted "index sum" of the eliminations. Different eliminations can
+	 * have the same sum (e.g. r7c9&lt;&gt;7 and r8c6&lt;&gt;1), and the sum depended on
+	 * the order of the elimination list, so the order was not transitive and
+	 * {@link java.util.Collections#sort(List, Comparator)} could throw
+	 * "Comparison method violates its general contract!".
 	 */
 	@Override
 	public int compare(SolutionStep o1, SolutionStep o2) {
-		if (debug) {
-			System.out.println("Comparing:");
-			System.out.println("   " + o1);
-			System.out.println("   " + o2);
-		}
-		int sum1 = 0, sum2 = 0;
-
-		// zuerst nach Anzahl zu löschende Kandidaten (absteigend!)
+		// first by number of candidates to delete (descending!)
 		int result = o2.getCandidatesToDelete().size() - o1.getCandidatesToDelete().size();
-		if (debug) {
-			System.out.println("      1: " + result);
-		}
 		if (result != 0) {
-			return result; // nach Äquivalenz (gleiche zu löschende Kandidaten)
+			return result;
 		}
-		if (!o1.isEquivalent(o2)) {
-			// nicht äquivalent: nach Indexsumme der zu löschenden Kandidaten
-			sum1 = o1.getIndexSumme(o1.getCandidatesToDelete());
-			sum2 = o2.getIndexSumme(o2.getCandidatesToDelete());
-			if (debug) {
-				System.out.println("      2: " + (sum1 - sum2) + " (" + sum1 + "/" + sum2 + ")");
-			}
-			return (sum1 - sum2);
+		// then by the candidates themselves
+		result = compareCandidates(o1.getCandidatesToDelete(), o2.getCandidatesToDelete());
+		if (result != 0) {
+			return result;
 		}
-
-		// Nach Anzahl ALS
+		// by number of ALS
 		result = o1.getAlses().size() - o2.getAlses().size();
-		if (debug) {
-			System.out.println("      3: " + result);
-		}
 		if (result != 0) {
-			return result; // Nach Anzahl Kandidaten in allen ALS
+			return result;
 		}
+		// by number of cells in all ALS
 		result = o1.getAlsesIndexCount() - o2.getAlsesIndexCount();
-		if (debug) {
-			System.out.println("      4: " + result);
-		}
 		if (result != 0) {
-			return result; // zuletzt nach Typ
+			return result;
 		}
-//        return o1.getType().ordinal() - o2.getType().ordinal();
-		if (debug) {
-			System.out.println("      5: " + (o1.getType().compare(o2.getType())));
-		}
-
+		// finally by type
 		return o1.getType().compare(o2.getType());
+	}
+
+	/**
+	 * Compares two lists of candidates of the same size independent of the order
+	 * of the lists.
+	 */
+	private static int compareCandidates(List<Candidate> l1, List<Candidate> l2) {
+		int[] k1 = sortedKeys(l1);
+		int[] k2 = sortedKeys(l2);
+		int n = Math.min(k1.length, k2.length);
+		for (int i = 0; i < n; i++) {
+			if (k1[i] != k2[i]) {
+				return Integer.compare(k1[i], k2[i]);
+			}
+		}
+		return Integer.compare(k1.length, k2.length);
+	}
+
+	private static int[] sortedKeys(List<Candidate> list) {
+		int[] keys = new int[list.size()];
+		for (int i = 0; i < keys.length; i++) {
+			Candidate c = list.get(i);
+			keys[i] = c.getIndex() * 10 + c.getValue();
+		}
+		Arrays.sort(keys);
+		return keys;
 	}
 }
