@@ -1379,13 +1379,15 @@ public class TablingSolver extends AbstractSolver {
 	/**
 	 * AICs are checked separately: The end of the chain has to be:
 	 * <ul>
-	 * <li>on-entry for the same candidate as the start cell (Type 1), if the
-	 * combined buddies of start and end cell can eliminate more than one
-	 * candidate</li>
+	 * <li>on-entry for the same candidate as the start cell (Type 1), if at least
+	 * one cell that sees both ends contains that candidate</li>
 	 * <li>on-entry for a different candidate if the end cell sees the start cell
-	 * and if the start cell contains a candidate of the chain end and the end cell
-	 * contains a candidate of the chain start</li>
+	 * and if the start cell contains the candidate of the chain end or the end
+	 * cell contains the candidate of the chain start (Type 2)</li>
 	 * </ul>
+	 * A single elimination and a one-sided Type 2 used to be left to the
+	 * Discontinuous Nice Loop search, so the label depended on the direction in
+	 * which the chain was found (issue #42).
 	 *
 	 * @param tables Only offTables are allowed (AICs start with a strong link)
 	 */
@@ -1405,8 +1407,7 @@ public class TablingSolver extends AbstractSolver {
 					tmpSet.set(buddies);
 					tmpSet.and(Sudoku2.buddies[tables[i].getCellIndex(j)]);
 					tmpSet.and(finder.getCandidates()[startCandidate]);
-					if (!tmpSet.isEmpty() && tmpSet.size() >= 2) {
-						// everything else is already covered by a Nice Loop
+					if (!tmpSet.isEmpty()) {
 						checkAic(tables[i], j);
 					}
 				} else {
@@ -1415,7 +1416,7 @@ public class TablingSolver extends AbstractSolver {
 						continue;
 					}
 					if (sudoku.isCandidate(tables[i].getCellIndex(j), startCandidate)
-							&& sudoku.isCandidate(startIndex, tables[i].getCandidate(j))) {
+							|| sudoku.isCandidate(startIndex, tables[i].getCandidate(j))) {
 						// Type 2
 						checkAic(tables[i], j);
 					}
@@ -1755,7 +1756,7 @@ public class TablingSolver extends AbstractSolver {
 			tmpSet.set(Sudoku2.buddies[startIndex]);
 			tmpSet.and(Sudoku2.buddies[endIndex]);
 			tmpSet.and(finder.getCandidates()[startCandidate]);
-			if (tmpSet.size() > 1) {
+			if (!tmpSet.isEmpty()) {
 				for (int i = 0; i < tmpSet.size(); i++) {
 					if (tmpSet.get(i) != startIndex) {
 						globalStep.addCandidateToDelete(tmpSet.get(i), startCandidate);
