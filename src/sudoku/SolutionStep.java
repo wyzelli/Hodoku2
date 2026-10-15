@@ -2026,147 +2026,171 @@ public class SolutionStep implements Comparable<SolutionStep>, Cloneable {
 	}
 
 	/**
-	 * Sortierreihenfolge:
-	 *
-	 * - Die Steps mit den meisten zu löschenden Kandidaten zuerst - Dann nach
-	 * betroffenen Kandidaten - dann nach Äquvalenz (wenn nicht äquivalent, nach
-	 * Summe der Indexe der zu löschenden Kandidaten - dann nach betroffenen
-	 * Kandidaten und Fins - innerhalb der gleichen Steps nach type
+	 * Sort order (every criterion is a plain key, so the order is transitive as
+	 * required by {@link Comparable}):
+	 * <ul>
+	 * <li>steps that set a cell first (all of them are equal, so a stable sort keeps
+	 * the order in which they were found)</li>
+	 * <li>number of candidates to delete (descending)</li>
+	 * <li>kind: other steps, then fish, then kraken fish</li>
+	 * <li>fish: type (category, size, sashimi), cannibalistic candidates, endo fins,
+	 * fins, fish candidates</li>
+	 * <li>kraken fish: fish type, chain length</li>
+	 * <li>all other steps: chain length, candidates to delete (sorted by cell and
+	 * digit, compared one by one), values, indices, type</li>
+	 * </ul>
+	 * The old version compared non-equivalent steps by a weighted index sum of the
+	 * eliminations. Different eliminations can give the same sum, the sum depended
+	 * on the order of the list, and every fish counted as "equivalent" to every
+	 * other fish, so the order was not transitive (and with duplicate eliminations
+	 * not even antisymmetric).
 	 */
 	@Override
 	public int compareTo(SolutionStep o) {
-		
-		int sum1 = 0;
-		int sum2 = 0;
-
-		// Steps, die einen Kandidaten setzen, immer zuerst
-		if (isSingle(type) && !isSingle(o.type)) {
-			return -1;
-		} else if (!isSingle(type) && isSingle(o.type)) {
-			return 1;
+		// steps that set a cell always come first
+		boolean single1 = isSingle(type);
+		boolean single2 = isSingle(o.type);
+		if (single1 || single2) {
+			return single1 == single2 ? 0 : (single1 ? -1 : 1);
 		}
 
-		// zuerst nach Anzahl zu löschende Kandidaten (absteigend!)
+		// then by number of candidates to delete (descending!)
 		int result = o.candidatesToDelete.size() - candidatesToDelete.size();
 		if (result != 0) {
 			return result;
 		}
 
-		// nach Äquivalenz (gleiche zu löschende Kandidaten)
-		if (!isEquivalent(o)) {
-            // change 20110512: short chains first!
-			// change 2019-11-28, this was commented out, but without it, the comparator would crash when
-			// trying to solve this example edge case: 
-			// 5.2.8..4.93..64.........93.....7.6.9..6....58.....62...7..9....4....38....3.5...7
-            int chainDiff = compareChainLengths(o);
-            if (chainDiff != 0) {
-                return chainDiff;
-            }
-
-			// not equivalent: by the index sum of the candidates to be deleted
-			sum1 = getIndexSumme(candidatesToDelete); // 23
-			sum2 = getIndexSumme(o.candidatesToDelete); // 40
-			// BUG 20110512: Sort order is intransitiv - doesnt work with Java7 anymore
-//            return sum1 == sum2 ? 1 : sum1 - sum2;
-			// 
-			return (sum1 - sum2); // 23 - 40
+		int kind1 = getSortKind();
+		int kind2 = o.getSortKind();
+		if (kind1 != kind2) {
+			return kind1 - kind2;
 		}
 
-		// SPECIAL STEPS
-		// fish general: sort for
-		// - fish type
-		// - fish size
-		// - cannibalism
-		// - number of endo fins
-		// - number of fins
-		if (type.isFish() && o.getType().isFish()) {
-			int ret = type.compare(o.getType());
-			if (ret != 0) {
-				// different type or different size
-				return ret;
+		if (kind1 == SORT_KIND_FISH) {
+			// fish: type (category, size, sashimi), cannibalism, endo fins, fins
+			result = type.compare(o.getType());
+			if (result != 0) {
+				return result;
 			}
-			ret = getCannibalistic().size() - o.getCannibalistic().size();
-			if (ret != 0) {
-				return ret;
+			result = getCannibalistic().size() - o.getCannibalistic().size();
+			if (result != 0) {
+				return result;
 			}
-			ret = getEndoFins().size() - o.getEndoFins().size();
-			if (ret != 0) {
-				return ret;
+			result = getEndoFins().size() - o.getEndoFins().size();
+			if (result != 0) {
+				return result;
 			}
-			ret = getFins().size() - o.getFins().size();
-			if (ret != 0) {
-				return ret;
+			result = getFins().size() - o.getFins().size();
+			if (result != 0) {
+				return result;
 			}
-			if (!isEqualInteger(values, o.values)) {
-				sum1 = getSumme(values);
-				sum2 = getSumme(o.values);
-				// return sum1 == sum2 ? 1 : sum1 - sum2;
-				return sum1 - sum2;
-			}
-			return 0;
+			return compareIntegerLists(values, o.values, true);
 		}
 
-		// kraken fish: sort for (fish type, chain length)
-//        System.out.println("c: " + getType()+ "/"+ getSubType()+" - " + o.getType() + "/" + o.getSubType());
-		if (type.isKrakenFish() && o.getType().isKrakenFish()) {
-			// if (type == SolutionType.KRAKEN_FISH && o.getType() ==
-			// SolutionType.KRAKEN_FISH) {
-			int ret = subType.compare(o.getSubType());
-//            System.out.println("ck1: " + ret);
-			if (ret != 0) {
-				return ret;
+		if (kind1 == SORT_KIND_KRAKEN) {
+			// kraken fish: fish type, chain length
+			result = subType.compare(o.getSubType());
+			if (result != 0) {
+				return result;
 			}
-//            System.out.println("ck2: " + compareChainLengths(o));
 			return compareChainLengths(o);
 		}
 
-		// GENERAL STEPS
-		// Neu: Chains - nach Länge der Chains (gesamt)
-		int chainDiff = compareChainLengths(o);
-		if (chainDiff != 0) {
-			return chainDiff;
+		// general steps: chains by total length first
+		result = compareChainLengths(o);
+		if (result != 0) {
+			return result;
 		}
-
-		// jetzt nach betroffenen Kandidaten
-		// wenn alle betroffenen Kandidaten gleich sind, sind die Steps gleich, sonst
-		// zählt die Summe
-		if (!isEqualInteger(values, o.values)) {
-			sum1 = getSumme(values);
-			sum2 = getSumme(o.values);
-//            return sum1 == sum2 ? 1 : sum1 - sum2;
-			return sum1 - sum2;
+		// then by the candidates to delete
+		result = compareCandidateLists(candidatesToDelete, o.candidatesToDelete);
+		if (result != 0) {
+			return result;
 		}
-
-		// Neuer Versuch: Nach Kandidaten, Fins und Typ
-		// Zuerst Kandidaten
-		if (!isEqualInteger(indices, o.indices)) {
-			// zuerst nach Anzahl
-			if (indices.size() != o.indices.size()) {
-				return indices.size() - o.indices.size();
-			}
-			// dann nach Indexsumme (wieder aufsteigend)
-			sum1 = getSumme(indices);
-			sum2 = getSumme(o.indices);
-//            return sum1 == sum2 ? 1 : sum2 - sum1;
-			return sum2 - sum1;
+		// then by the values involved (lower sum first)
+		result = compareIntegerLists(values, o.values, true);
+		if (result != 0) {
+			return result;
 		}
-
-//        // Kandidaten sind gleich: nach Fins (je weniger desto besser)
-//        if (!isEqualCandidate(fins, o.fins)) {
-//            // zuerst nach Anzahl fins
-//            if (fins.size() != o.fins.size()) {
-//                return fins.size() - o.fins.size();
-//            }
-//            // gleich Anzahl Fins -> nach Indexsumme
-//            sum1 = getIndexSumme(fins);
-//            sum2 = getIndexSumme(o.fins);
-////            return sum1 == sum2 ? 1 : sum2 - sum1;
-//            return sum2 - sum1;
-//        }
-
-		// zuletzt nach Typ
-		// return type.ordinal() - o.type.ordinal();
+		// then by the cells involved: fewer first, then higher index sum first
+		result = indices.size() - o.indices.size();
+		if (result != 0) {
+			return result;
+		}
+		result = compareIntegerLists(indices, o.indices, false);
+		if (result != 0) {
+			return result;
+		}
+		// last by type
 		return type.compare(o.getType());
+	}
+
+	/** Sort kinds for {@link #compareTo(SolutionStep)}. */
+	private static final int SORT_KIND_OTHER = 0;
+	private static final int SORT_KIND_FISH = 1;
+	private static final int SORT_KIND_KRAKEN = 2;
+
+	private int getSortKind() {
+		if (type.isFish()) {
+			return SORT_KIND_FISH;
+		}
+		if (type.isKrakenFish()) {
+			return SORT_KIND_KRAKEN;
+		}
+		return SORT_KIND_OTHER;
+	}
+
+	/**
+	 * Compares two lists of integers independent of their order: by sum (ascending
+	 * or descending), then by the sorted lists.
+	 */
+	private static int compareIntegerLists(List<Integer> l1, List<Integer> l2, boolean ascending) {
+		int[] k1 = sortedInts(l1);
+		int[] k2 = sortedInts(l2);
+		long sum1 = 0, sum2 = 0;
+		for (int v : k1) {
+			sum1 += v;
+		}
+		for (int v : k2) {
+			sum2 += v;
+		}
+		if (sum1 != sum2) {
+			return ascending ? Long.compare(sum1, sum2) : Long.compare(sum2, sum1);
+		}
+		return compareSortedKeys(k1, k2);
+	}
+
+	/** Compares two lists of candidates independent of their order. */
+	private static int compareCandidateLists(List<Candidate> l1, List<Candidate> l2) {
+		int[] k1 = new int[l1.size()];
+		for (int i = 0; i < k1.length; i++) {
+			k1[i] = l1.get(i).getIndex() * 10 + l1.get(i).getValue();
+		}
+		int[] k2 = new int[l2.size()];
+		for (int i = 0; i < k2.length; i++) {
+			k2[i] = l2.get(i).getIndex() * 10 + l2.get(i).getValue();
+		}
+		java.util.Arrays.sort(k1);
+		java.util.Arrays.sort(k2);
+		return compareSortedKeys(k1, k2);
+	}
+
+	private static int[] sortedInts(List<Integer> list) {
+		int[] keys = new int[list.size()];
+		for (int i = 0; i < keys.length; i++) {
+			keys[i] = list.get(i);
+		}
+		java.util.Arrays.sort(keys);
+		return keys;
+	}
+
+	private static int compareSortedKeys(int[] k1, int[] k2) {
+		int n = Math.min(k1.length, k2.length);
+		for (int i = 0; i < n; i++) {
+			if (k1[i] != k2[i]) {
+				return Integer.compare(k1[i], k2[i]);
+			}
+		}
+		return Integer.compare(k1.length, k2.length);
 	}
 
 	public boolean isEqualValues(SolutionStep s) {
