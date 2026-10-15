@@ -1378,6 +1378,7 @@ public class FishSolver extends AbstractSolver {
 		if (Options.getInstance().isOnlyOneFishPerStep()) {
 			// String del = globalStep.getCandidateString() + " " +
 			// globalStep.getValues().get(0);
+			globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 			String delOrg = globalStep.getCandidateString();
 			int startIndex = delOrg.indexOf(')');
 			startIndex = delOrg.indexOf('(', startIndex);
@@ -1410,6 +1411,7 @@ public class FishSolver extends AbstractSolver {
 	 * @return
 	 */
 	private SolutionStep addKrakenStep(SolutionStep step) {
+		step.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 		String del = step.getCandidateString() + " " + step.getValues().get(0);
 		Integer oldIndex = deletesMap.get(del);
 		SolutionStep tmpStep = null;

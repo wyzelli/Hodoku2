@@ -681,6 +681,7 @@ public class AlsSolver extends AbstractSolver {
 					int replaceIndex = -1;
 					String elim = null;
 					if (Options.getInstance().isOnlyOneAlsPerStep()) {
+						globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 						elim = globalStep.getCandidateString();
 						Integer alreadyThere = deletesMap.get(elim);
 						if (alreadyThere != null) {
@@ -933,6 +934,7 @@ public class AlsSolver extends AbstractSolver {
 						int replaceIndex = -1;
 						String elim = null;
 						if (Options.getInstance().isOnlyOneAlsPerStep()) {
+							globalStep.sortCandidatesToDelete(); // keep the deletion order (issue #36)
 							elim = globalStep.getCandidateString();
 							Integer alreadyThere = deletesMap.get(elim);
 							if (alreadyThere != null) {
