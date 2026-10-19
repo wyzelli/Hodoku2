@@ -213,7 +213,10 @@ public class AlsSolver extends AbstractSolver {
 		sudoku = finder.getSudoku();
 		List<SolutionStep> oldSteps = steps;
 		List<SolutionStep> resultSteps = new ArrayList<SolutionStep>();
-		finder.setRcOnlyForward(Options.getInstance().isAllStepsAlsChainForwardOnly());
+		// ALS-XZ and ALS-XY-Wing only need RCs in one direction; RCs in both
+		// directions would only produce duplicate steps (issue #48). The chain
+		// search switches to both directions below (see #23).
+		finder.setRcOnlyForward(true);
 		maxChainLinks = Math.max(1, Math.min(MAX_RC, Options.getInstance().getAllStepsAlsChainLength()));
 		long millis1 = 0;
 		if (TIMING) {
