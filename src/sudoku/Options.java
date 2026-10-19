@@ -354,7 +354,6 @@ public final class Options {
 	public static final String ALL_STEPS_KRAKEN_FISH_CANDIDATES = "111111111"; // see above
 	public static final int ALL_STEPS_SORT_MODE = 4; // sort by StepType
 	public static final int ALL_STEPS_ALS_CHAIN_LENGTH = 6; // maximum chain length in ALS-Chain search (all steps only)
-	public static final boolean ALL_STEPS_ALS_CHAIN_FORWARD_ONLY = true;
 	private boolean allStepsSearchFish = ALL_STEPS_SEARCH_FISH;
 	private int allStepsMaxFishType = ALL_STEPS_MAX_FISH_TYPE;
 	private int allStepsMinFishSize = ALL_STEPS_MIN_FISH_SIZE;
@@ -371,7 +370,12 @@ public final class Options {
 	private String allStepsKrakenFishCandidates = ALL_STEPS_KRAKEN_FISH_CANDIDATES;
 	private int allStepsSortMode = ALL_STEPS_SORT_MODE;
 	private int allStepsAlsChainLength = ALL_STEPS_ALS_CHAIN_LENGTH;
-	private boolean allStepsAlsChainForwardOnly = ALL_STEPS_ALS_CHAIN_FORWARD_ONLY;
+	/**
+	 * No longer used (issue #48): kept only so that existing configuration files
+	 * still load.
+	 */
+	@Deprecated
+	private boolean allStepsAlsChainForwardOnly = true;
 	// SudokuPanel
 	// Coloring Solver
 	public static final Color DEFAULT_PRIMARY_COLOR = new Color(134, 242, 128);
@@ -1556,15 +1560,23 @@ public final class Options {
 	}
 
 	/**
+	 * No longer used (issue #48): kept only so that existing configuration files
+	 * still load.
+	 *
 	 * @return the allStepsAlsChainForwardOnly
 	 */
+	@Deprecated
 	public boolean isAllStepsAlsChainForwardOnly() {
 		return allStepsAlsChainForwardOnly;
 	}
 
 	/**
+	 * No longer used (issue #48): kept only so that existing configuration files
+	 * still load.
+	 *
 	 * @param allStepsAlsChainForwardOnly the allStepsAlsChainForwardOnly to set
 	 */
+	@Deprecated
 	public void setAllStepsAlsChainForwardOnly(boolean allStepsAlsChainForwardOnly) {
 		this.allStepsAlsChainForwardOnly = allStepsAlsChainForwardOnly;
 	}

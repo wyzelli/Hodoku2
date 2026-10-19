@@ -133,7 +133,6 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 		alsPanel = new javax.swing.JPanel();
 		alsChainLengthLabel = new javax.swing.JLabel();
 		alsChainLengthComboBox = new javax.swing.JComboBox<String>();
-		alsBiDirCheckBox = new javax.swing.JCheckBox();
 
 		resetButton.setMnemonic(java.util.ResourceBundle.getBundle("intl/ConfigFindAllStepsPanel")
 				.getString("ConfigFindAllStepsPanel.resetButton.mnemonic").charAt(0));
@@ -436,10 +435,6 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 		alsChainLengthComboBox
 				.setModel(new javax.swing.DefaultComboBoxModel<String>(new String[] { "4", "5", "6", "7" }));
 
-		alsBiDirCheckBox.setMnemonic(java.util.ResourceBundle.getBundle("intl/ConfigFindAllStepsPanel")
-				.getString("ConfigFindAllStepsPanel.alsBiDirCheckBox.mnemonic").charAt(0));
-		alsBiDirCheckBox.setText(bundle.getString("ConfigFindAllStepsPanel.alsBiDirCheckBox.text")); // NOI18N
-
 		javax.swing.GroupLayout alsPanelLayout = new javax.swing.GroupLayout(alsPanel);
 		alsPanel.setLayout(alsPanelLayout);
 		alsPanelLayout.setHorizontalGroup(alsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -447,15 +442,13 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 						.addComponent(alsChainLengthComboBox, javax.swing.GroupLayout.PREFERRED_SIZE,
 								javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-						.addGap(18, 18, 18).addComponent(alsBiDirCheckBox)
 						.addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 		alsPanelLayout.setVerticalGroup(alsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
 				.addGroup(alsPanelLayout.createSequentialGroup().addContainerGap()
 						.addGroup(alsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
 								.addComponent(alsChainLengthLabel)
 								.addComponent(alsChainLengthComboBox, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addComponent(alsBiDirCheckBox))
+										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
 						.addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
 		javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -584,7 +577,6 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 		Options.getInstance().setAllStepsKrakenFishCandidates(krakenFishCandidates);
 
 		Options.getInstance().setAllStepsAlsChainLength(alsChainLengthComboBox.getSelectedIndex() + 4);
-		Options.getInstance().setAllStepsAlsChainForwardOnly(alsBiDirCheckBox.isSelected());
 	}
 
 	private void initAll(boolean setDefault) {
@@ -610,7 +602,6 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 			krakenFishCandidates = Options.ALL_STEPS_KRAKEN_FISH_CANDIDATES;
 
 			alsChainLengthComboBox.setSelectedIndex(Options.ALL_STEPS_ALS_CHAIN_LENGTH - 4);
-			alsBiDirCheckBox.setSelected(Options.ALL_STEPS_ALS_CHAIN_FORWARD_ONLY);
 		} else {
 			steps = Options.getInstance().copyStepConfigs(Options.getInstance().solverSteps, true, false);
 
@@ -632,7 +623,6 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 			krakenFishCandidates = Options.getInstance().getAllStepsKrakenFishCandidates();
 
 			alsChainLengthComboBox.setSelectedIndex(Options.getInstance().getAllStepsAlsChainLength() - 4);
-			alsBiDirCheckBox.setSelected(Options.getInstance().isAllStepsAlsChainForwardOnly());
 		}
 		setCandidateLabels();
 
@@ -733,7 +723,6 @@ public class ConfigFindAllStepsPanel extends javax.swing.JPanel {
 	}
 
 	// Variables declaration - do not modify//GEN-BEGIN:variables
-	private javax.swing.JCheckBox alsBiDirCheckBox;
 	private javax.swing.JComboBox<String> alsChainLengthComboBox;
 	private javax.swing.JLabel alsChainLengthLabel;
 	private javax.swing.JPanel alsPanel;
