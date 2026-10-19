@@ -69,9 +69,15 @@ public class AlsSolver extends AbstractSolver {
 	private SolutionStep globalStep = new SolutionStep(SolutionType.HIDDEN_SINGLE);
 	/**
 	 * The current ALS Chain: The chain consists only of its RCs. A chain cannot be
-	 * longer than <code>chain.length</code>.
+	 * longer than {@link #maxChainLinks}.
 	 */
 	private RestrictedCommon[] chain = new RestrictedCommon[MAX_RC];
+	/**
+	 * Maximum number of RCs in an ALS-Chain for the current search: {@link #MAX_RC}
+	 * when solving, the "find all steps" chain length option otherwise. Set for
+	 * every search, so a changed option takes effect immediately (issue #47).
+	 */
+	private int maxChainLinks = MAX_RC;
 	/** The index into {@link #chain} for the current search. */
 	private int chainIndex = -1;
 	/**
@@ -163,9 +169,7 @@ public class AlsSolver extends AbstractSolver {
 		case ALS_XY_CHAIN:
 			// chain search needs RCs in both directions (see #23)
 			finder.setRcOnlyForward(false);
-			if (chain.length != MAX_RC) {
-				chain = new RestrictedCommon[MAX_RC];
-			}
+			maxChainLinks = MAX_RC;
 			result = getAlsXYChain();
 			break;
 		case DEATH_BLOSSOM:
@@ -210,9 +214,7 @@ public class AlsSolver extends AbstractSolver {
 		List<SolutionStep> oldSteps = steps;
 		List<SolutionStep> resultSteps = new ArrayList<SolutionStep>();
 		finder.setRcOnlyForward(Options.getInstance().isAllStepsAlsChainForwardOnly());
-		if (chain.length == MAX_RC) {
-			chain = new RestrictedCommon[Options.getInstance().getAllStepsAlsChainLength()];
-		}
+		maxChainLinks = Math.max(1, Math.min(MAX_RC, Options.getInstance().getAllStepsAlsChainLength()));
 		long millis1 = 0;
 		if (TIMING) {
 			millis1 = System.nanoTime();
@@ -629,7 +631,7 @@ public class AlsSolver extends AbstractSolver {
 	 * @param firstDigit actual RC of the first link
 	 */
 	private void searchAlsChainStates(int startIndex, int firstDigit) {
-		int maxLinks = chain.length;
+		int maxLinks = maxChainLinks;
 		stampGeneration++;
 		if (stampGeneration == Integer.MAX_VALUE) {
 			Arrays.fill(stateStamp, 0);
