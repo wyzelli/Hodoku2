@@ -16,26 +16,69 @@
 			padding: 0.75rem 1rem;
 			font-size: 0.9rem;
 		}
+		#back-link {
+			position: fixed;
+			top: 0.5rem;
+			right: 0.75rem;
+			font-size: 0.8rem;
+			color: #9ad1ff;
+			text-decoration: none;
+			z-index: 10;
+		}
+		#back-link:hover { text-decoration: underline; }
+		#clipboard-hint {
+			position: fixed;
+			top: 2rem;
+			right: 0.75rem;
+			max-width: 15rem;
+			font-size: 0.75rem;
+			line-height: 1.4;
+			color: #aaa;
+			text-align: right;
+			z-index: 10;
+		}
+		#clipboard-hint kbd {
+			font: inherit;
+			color: #ddd;
+			padding: 0 0.25em;
+			border: 1px solid #555;
+			border-radius: 3px;
+		}
 	</style>
 </head>
 <body>
+	<a id="back-link" href="/">&larr; hodoku.dev</a>
+	<p id="clipboard-hint">To paste a puzzle, click the HoDoKu window and press <kbd class="mod">Ctrl</kbd>+<kbd>V</kbd>. To copy, press <kbd class="mod">Ctrl</kbd>+<kbd>C</kbd> twice.</p>
 	<div id="status">Loading HoDoKu&hellip; the JVM and jar are downloaded on first run, so please be patient.</div>
 	<!--
 		CheerpJ is a WebAssembly JVM that runs standard Java bytecode (up to Java 17)
 		directly in the browser - no plugins, no server-side Java. See
 		https://cheerpj.com/docs/getting-started/Java-app.html
+
+		This page is served at https://hodoku.dev/play/ with HoDoKu-web.jar next to it.
+		Two identical copies are kept: play/index.html in the hodoku.dev site repo (live)
+		and web/play/index.html in wyzelli/Hodoku2 (public template, see its README).
+		Change both together.
 	-->
 	<script src="https://cjrtnc.leaningtech.com/4.3/loader.js"></script>
 	<script>
 		(async () => {
 			const status = document.getElementById("status");
+			// Show Cmd instead of Ctrl in the clipboard hint on Apple devices.
+			if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+				document.querySelectorAll("#clipboard-hint .mod").forEach(k => { k.textContent = "Cmd"; });
+			}
 			try {
-				await cheerpjInit({ version: 17 });
+				// clipboardMode "system" connects Java's system clipboard to the browser's, so puzzles
+				// copied elsewhere can be pasted with Ctrl+V. CheerpJ's default ("java") keeps an internal
+				// clipboard only. In this mode copying out needs Ctrl+C pressed twice, and menu Copy/Paste
+				// waits for the shortcut. See https://cheerpj.com/docs/reference/cheerpjInit#clipboardmode
+				await cheerpjInit({ version: 17, clipboardMode: "system" });
 				// Display sized to match Options.INITIAL_WIDTH / INITIAL_HEIGHT (1000 x 1000).
 				cheerpjCreateDisplay(1000, 1000);
-				// The jar must be deployed next to this file so it resolves at /app/HoDoKu-web.jar.
+				// Deployed under /play/, so CheerpJ's site-root mount puts the jar at /app/play/HoDoKu-web.jar.
 				status.remove();
-				await cheerpjRunJar("/app/HoDoKu-web.jar");
+				await cheerpjRunJar("/app/play/HoDoKu-web.jar");
 			} catch (err) {
 				status.textContent = "Failed to start HoDoKu: " + err;
 				console.error(err);

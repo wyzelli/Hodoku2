@@ -23,30 +23,38 @@ keep their Java 21 targeting.
 
 ## 2. Deploy
 
-`index.html` loads the jar from the CheerpJ virtual path `/app/HoDoKu-web.jar`.
+`index.html` is the same file that is served at https://hodoku.dev/play/. It
+expects to live under a `/play/` sub-path and loads the jar from the CheerpJ
+virtual path `/app/play/HoDoKu-web.jar`.
 
-CheerpJ mounts the **web server root** (the site origin) at `/app/`. So the jar
-must be reachable such that its path under `/app/` matches what `index.html`
-requests:
+CheerpJ mounts the **web server root** (the site origin) at `/app/`, so the jar
+must be deployed **alongside** `index.html`:
 
-- Deploy the **contents of this `web/play` directory as the site root**, with
-  `HoDoKu-web.jar` copied in alongside `index.html`. Then
-  `index.html` -> `/` and `HoDoKu-web.jar` -> `/app/HoDoKu-web.jar`, as coded.
-- If instead you serve this page under a sub-path (e.g. `https://example.com/play/`),
-  the jar sits at `/app/play/HoDoKu-web.jar`; update the `cheerpjRunJar(...)`
-  argument in `index.html` accordingly (or place the jar at the site root).
+- **Under `/play/` (as coded):** publish `index.html` and `HoDoKu-web.jar` as
+  `https://example.com/play/`. The jar is then at `/app/play/HoDoKu-web.jar`.
+- **At the site root:** change the `cheerpjRunJar(...)` argument to
+  `"/app/HoDoKu-web.jar"`, and remove or repoint the "← hodoku.dev" back link.
 
-In all cases the jar must be deployed **alongside** `index.html`.
-
-Example (deploying to the site root):
+Example (deploying under `/play/`):
 
 ```sh
 ./gradlew webJar
-cp build/web/HoDoKu-web.jar web/play/HoDoKu-web.jar   # sit next to index.html
-# then publish the contents of web/play/ as the static site
+mkdir -p site/play
+cp web/play/index.html build/web/HoDoKu-web.jar site/play/
+# then publish site/ as the static site, served by an HTTP server that supports
+# Range requests (CheerpJ needs them to read the jar)
 ```
 
-The jar (~2.2 MB) is downloaded on first run, so initial load takes a moment.
+The jar (about 1.5 MB) is downloaded on first run, so the first load takes a moment.
+
+### Clipboard
+
+`cheerpjInit` sets `clipboardMode: "system"`, so puzzles copied elsewhere can be
+pasted with Ctrl+V (Cmd+V on Mac) after clicking the HoDoKu window. Copying out
+needs Ctrl+C pressed twice, and Edit menu Copy/Paste waits for the shortcut. The
+page shows a short hint saying this. CheerpJ's default (`"java"`) keeps an
+internal clipboard that can't see anything copied outside the app. See the
+[CheerpJ docs](https://cheerpj.com/docs/reference/cheerpjInit).
 
 ## 3. Optional: cross-origin isolation for multithreaded WASM
 
